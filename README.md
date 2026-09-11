@@ -7,6 +7,8 @@ whiteboard product, and doesn't cost a seat licence. Local-first, keyboard-drive
 
 ![stack](https://img.shields.io/badge/React%20Flow-canvas-6366f1) ![stack](https://img.shields.io/badge/Mermaid-source%20of%20truth-ec4899)
 
+![Cardinal editing the Planet Express schema: table explorer, canvas with crow's-foot relationships, live Mermaid source and the schema inspector](./docs/screenshot.png)
+
 ## What it does
 
 - **React Flow canvas** — drag tables, drag from any column to any column to draw a relationship,

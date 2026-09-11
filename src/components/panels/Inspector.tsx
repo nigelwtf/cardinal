@@ -332,10 +332,10 @@ function DiagramInspector() {
           ["⌘Z / ⇧⌘Z", "Undo / redo"],
           ["Double-click", "New table on canvas"],
           ["Drag a column edge", "Create a relationship"],
-          ["Hover a line", "Reveals its bend handles"],
-          ["Drag a dot", "Bend the line there"],
-          ["Double-click a dot", "Remove that bend"],
-          ["Hold ⌥", "Bend off-grid"],
+          ["Hover", "Show a line's bend handles"],
+          ["Drag a dot", "Add or move a bend"],
+          ["Double-click a dot", "Remove a bend"],
+          ["⌥ while dragging", "Bend off-grid"],
           ["Drag a line end", "Re-point a relationship"],
         ].map(([keys, description]) => (
           <div key={keys} className="flex items-center justify-between gap-3">
