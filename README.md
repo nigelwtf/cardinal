@@ -1,4 +1,4 @@
-![An iconographic portrait of a red Cardinal bird](./cardinal.png)
+<img src="./src/assets/cardinal.png" alt="An iconographic portrait of a red Cardinal bird" width="96" height="96" />
 
 # Cardinal
 
