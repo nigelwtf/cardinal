@@ -12,6 +12,7 @@ import {
   type OnConnect,
   type OnReconnect,
   useReactFlow,
+  useViewport,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { useDiagram } from "@/store/useDiagram"
@@ -22,6 +23,15 @@ import { TABLE_HANDLE, TableNode, columnFromHandle, handleId, type TableNodeData
 
 const nodeTypes = { table: TableNode }
 const edgeTypes = { relationship: RelationshipEdge }
+
+function ZoomBadge() {
+  const { zoom } = useViewport()
+  return (
+    <div className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-medium tabular-nums text-foreground shadow-sm">
+      {Math.round(zoom * 100)}%
+    </div>
+  )
+}
 
 export function Canvas() {
   const diagram = useDiagram((s) => s.diagram)
@@ -189,6 +199,7 @@ export function Canvas() {
           if (!target.classList.contains("react-flow__pane")) return
           addTable(screenToFlowPosition({ x: event.clientX - NODE_WIDTH / 2, y: event.clientY - 20 }))
         }}
+        zoomOnDoubleClick={false}
         fitView
         fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
         minZoom={0.15}
@@ -199,7 +210,10 @@ export function Canvas() {
         className="bg-transparent"
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1} className="!bg-muted/30" />
-        <Controls showInteractive={false} className="!bottom-4 !left-4 overflow-hidden !rounded-lg !border !border-border !bg-card !shadow-sm [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground hover:[&_button]:!bg-accent" />
+        <div className="absolute bottom-4 left-4 z-[5] flex items-end gap-2">
+          <Controls showInteractive={false} className="!static !m-0 overflow-hidden !rounded-lg !border !border-border !bg-card !shadow-sm [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground hover:[&_button]:!bg-accent" />
+          <ZoomBadge />
+        </div>
         <MiniMap
           pannable
           zoomable
