@@ -32,7 +32,7 @@ function Workspace() {
   const [libraryOpen, setLibraryOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const hydrated = useRef(false)
-  const { fitView } = useReactFlow()
+  const { fitView, zoomIn, zoomOut, zoomTo } = useReactFlow()
 
   // Restore the last session, falling back to a worked example.
   useEffect(() => {
@@ -66,8 +66,13 @@ function Workspace() {
       { key: "n", run: () => addTable() },
       { key: "l", run: () => layout("LR") },
       { key: "Escape", preventDefault: false, run: () => select({ kind: "none" }) },
+      { key: "=", mod: true, run: () => zoomIn() },
+      { key: "+", mod: true, run: () => zoomIn() },
+      { key: "+", mod: true, shift: true, run: () => zoomIn() },
+      { key: "-", mod: true, run: () => zoomOut() },
+      { key: "0", mod: true, run: () => zoomTo(1, { duration: 200 }) },
     ],
-    [addTable, layout, redo, select, undo],
+    [addTable, layout, redo, select, undo, zoomIn, zoomOut, zoomTo],
   )
 
   useEffect(() => {
