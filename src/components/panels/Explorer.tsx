@@ -1,48 +1,58 @@
-import { useMemo, useState } from "react"
-import { useReactFlow } from "@xyflow/react"
-import { ChevronRight, KeyRound, Link2, Plus, Search, Table2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import { NODE_WIDTH, tableHeight } from "@/lib/layout"
-import { useDiagram } from "@/store/useDiagram"
+import { useMemo, useState } from "react";
+import { useReactFlow } from "@xyflow/react";
+import { ChevronRight, Plus, Search, Table2 } from "lucide-react";
+import { ColumnKeyIcon } from "@/components/ColumnKeyIcon";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { useDiagram } from "@/store/useDiagram";
 
 export function Explorer() {
-  const tables = useDiagram((s) => s.diagram.tables)
-  const relationships = useDiagram((s) => s.diagram.relationships)
-  const selection = useDiagram((s) => s.selection)
-  const select = useDiagram((s) => s.select)
-  const addTable = useDiagram((s) => s.addTable)
-  const { setCenter } = useReactFlow()
-  const [query, setQuery] = useState("")
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const tables = useDiagram((s) => s.diagram.tables);
+  const relationships = useDiagram((s) => s.diagram.relationships);
+  const selection = useDiagram((s) => s.selection);
+  const select = useDiagram((s) => s.select);
+  const addTable = useDiagram((s) => s.addTable);
+  const { setCenter } = useReactFlow();
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return tables
+    const q = query.trim().toLowerCase();
+    if (!q) return tables;
     return tables.filter(
-      (t) => t.name.toLowerCase().includes(q) || t.columns.some((c) => c.name.toLowerCase().includes(q)),
-    )
-  }, [query, tables])
+      (t) =>
+        t.name.toLowerCase().includes(q) || t.columns.some((c) => c.name.toLowerCase().includes(q)),
+    );
+  }, [query, tables]);
 
   const focus = (id: string) => {
-    const table = tables.find((t) => t.id === id)
-    select({ kind: "table", id })
+    const table = tables.find((t) => t.id === id);
+    select({ kind: "table", id });
     if (table) {
       setCenter(table.position.x + NODE_WIDTH / 2, table.position.y + tableHeight(table) / 2, {
         zoom: 1,
         duration: 350,
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="flex h-full flex-col bg-card">
       <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tables</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Tables
+        </span>
         <span className="text-[11px] tabular-nums text-muted-foreground/70">{tables.length}</span>
-        <Button size="icon" variant="ghost" className="ml-auto size-6" onClick={() => addTable()} title="New table">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="ml-auto size-6"
+          onClick={() => addTable()}
+          title="New table"
+        >
           <Plus className="size-3.5" />
         </Button>
       </div>
@@ -67,10 +77,10 @@ export function Explorer() {
             </p>
           )}
           {filtered.map((table) => {
-            const isOpen = expanded[table.id]
+            const isOpen = expanded[table.id];
             const degree = relationships.filter(
               (r) => r.sourceTableId === table.id || r.targetTableId === table.id,
-            ).length
+            ).length;
             return (
               <div key={table.id}>
                 <div
@@ -85,14 +95,19 @@ export function Explorer() {
                   <button
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      setExpanded((prev) => ({ ...prev, [table.id]: !prev[table.id] }))
+                      e.stopPropagation();
+                      setExpanded((prev) => ({ ...prev, [table.id]: !prev[table.id] }));
                     }}
                     className="flex size-4 shrink-0 items-center justify-center rounded hover:bg-background/60"
                   >
-                    <ChevronRight className={cn("size-3 transition-transform", isOpen && "rotate-90")} />
+                    <ChevronRight
+                      className={cn("size-3 transition-transform", isOpen && "rotate-90")}
+                    />
                   </button>
-                  <span className="size-2 shrink-0 rounded-full" style={{ background: table.accent }} />
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ background: table.accent }}
+                  />
                   <Table2 className="size-3 shrink-0 text-muted-foreground" />
                   <span className="truncate font-medium">{table.name}</span>
                   <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
@@ -103,13 +118,12 @@ export function Explorer() {
                   <div className="ml-6 border-l border-border/60 pl-2">
                     {table.columns.map((column) => (
                       <div key={column.id} className="flex items-center gap-1.5 py-0.5 text-[11px]">
-                        {column.pk ? (
-                          <KeyRound className="size-2.5 shrink-0 text-amber-500" />
-                        ) : column.fk ? (
-                          <Link2 className="size-2.5 shrink-0 text-sky-500" />
-                        ) : (
-                          <span className="size-2.5 shrink-0" />
-                        )}
+                        <ColumnKeyIcon
+                          pk={column.pk}
+                          fk={column.fk}
+                          className="size-2.5"
+                          placeholder={<span className="size-2.5 shrink-0" />}
+                        />
                         <span className="truncate">{column.name}</span>
                         <span className="ml-auto shrink-0 font-mono text-[9px] text-muted-foreground">
                           {column.type}
@@ -119,10 +133,10 @@ export function Explorer() {
                   </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }

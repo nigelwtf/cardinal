@@ -1,49 +1,61 @@
-import { useEffect, useState } from "react"
-import { useReactFlow } from "@xyflow/react"
-import { FileStack, Plus, Sparkles, Trash2 } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { useReactFlow } from "@xyflow/react";
+import { FileStack, Plus, Sparkles, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import { deleteDiagram, listDiagrams, loadDiagram, rememberLastOpened, type DiagramSummary } from "@/lib/persistence"
-import { emptyDiagram, seededDiagram } from "@/lib/sample"
-import type { Diagram } from "@/lib/types"
-import { useDiagram } from "@/store/useDiagram"
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import {
+  deleteDiagram,
+  listDiagrams,
+  loadDiagram,
+  rememberLastOpened,
+  type DiagramSummary,
+} from "@/lib/persistence";
+import { emptyDiagram, seededDiagram } from "@/lib/sample";
+import type { Diagram } from "@/lib/types";
+import { useDiagram } from "@/store/useDiagram";
 
 const relative = (timestamp: number) => {
-  const minutes = Math.round((Date.now() - timestamp) / 60000)
-  if (minutes < 1) return "just now"
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
-}
+  const minutes = Math.round((Date.now() - timestamp) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+};
 
-export function LibraryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const currentId = useDiagram((s) => s.diagram.id)
-  const replaceDiagram = useDiagram((s) => s.replaceDiagram)
-  const [items, setItems] = useState<DiagramSummary[]>([])
-  const { fitView } = useReactFlow()
+export function LibraryDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const currentId = useDiagram((s) => s.diagram.id);
+  const replaceDiagram = useDiagram((s) => s.replaceDiagram);
+  const [items, setItems] = useState<DiagramSummary[]>([]);
+  const { fitView } = useReactFlow();
 
-  const refresh = () => listDiagrams().then(setItems)
+  const refresh = () => listDiagrams().then(setItems);
 
   useEffect(() => {
-    if (open) void refresh()
-  }, [open])
+    if (open) void refresh();
+  }, [open]);
 
   const open_ = (diagram: Diagram) => {
-    replaceDiagram(diagram)
-    rememberLastOpened(diagram.id)
-    onOpenChange(false)
-    setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 50)
-  }
+    replaceDiagram(diagram);
+    rememberLastOpened(diagram.id);
+    onOpenChange(false);
+    setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 50);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,10 +66,20 @@ export function LibraryDialog({ open, onOpenChange }: { open: boolean; onOpenCha
         </DialogHeader>
 
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => open_(emptyDiagram())}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5"
+            onClick={() => open_(emptyDiagram())}
+          >
             <Plus className="size-3.5" /> Blank schema
           </Button>
-          <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => open_(seededDiagram())}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-1.5"
+            onClick={() => open_(seededDiagram())}
+          >
             <Sparkles className="size-3.5" /> Sample schema
           </Button>
         </div>
@@ -75,8 +97,8 @@ export function LibraryDialog({ open, onOpenChange }: { open: boolean; onOpenCha
                   item.id === currentId ? "border-primary/50 bg-primary/5" : "border-border/60",
                 )}
                 onClick={async () => {
-                  const diagram = await loadDiagram(item.id)
-                  if (diagram) open_(diagram)
+                  const diagram = await loadDiagram(item.id);
+                  if (diagram) open_(diagram);
                 }}
               >
                 <FileStack className="size-4 shrink-0 text-muted-foreground" />
@@ -91,10 +113,10 @@ export function LibraryDialog({ open, onOpenChange }: { open: boolean; onOpenCha
                   variant="ghost"
                   className="size-7 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                   onClick={async (event) => {
-                    event.stopPropagation()
-                    await deleteDiagram(item.id)
-                    await refresh()
-                    toast.success(`Deleted ${item.name}`)
+                    event.stopPropagation();
+                    await deleteDiagram(item.id);
+                    await refresh();
+                    toast.success(`Deleted ${item.name}`);
                   }}
                 >
                   <Trash2 className="size-3.5" />
@@ -105,5 +127,5 @@ export function LibraryDialog({ open, onOpenChange }: { open: boolean; onOpenCha
         </ScrollArea>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

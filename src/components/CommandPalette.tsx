@@ -1,6 +1,17 @@
-import { useReactFlow } from "@xyflow/react"
-import { Download, FolderOpen, LayoutGrid, Moon, Plus, Sun, Table2, Upload } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useReactFlow } from "@xyflow/react";
+import {
+  Download,
+  FolderOpen,
+  LayoutGrid,
+  Maximize2,
+  Minimize2,
+  Moon,
+  Plus,
+  Sun,
+  Table2,
+  Upload,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 import {
   CommandDialog,
   CommandEmpty,
@@ -9,35 +20,41 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command"
-import { download } from "@/lib/download"
-import { NODE_WIDTH, tableHeight } from "@/lib/layout"
-import { toMermaid } from "@/lib/mermaid/serialize"
-import { toSql } from "@/lib/sql/export"
-import { useDiagram } from "@/store/useDiagram"
+} from "@/components/ui/command";
+import { download } from "@/lib/download";
+import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { toMermaid } from "@/lib/mermaid/serialize";
+import { toSql } from "@/lib/sql/export";
+import { useDiagram } from "@/store/useDiagram";
 
 interface Props {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onOpenLibrary: () => void
-  onOpenImport: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenLibrary: () => void;
+  onOpenImport: () => void;
 }
 
 export function CommandPalette({ open, onOpenChange, onOpenLibrary, onOpenImport }: Props) {
-  const diagram = useDiagram((s) => s.diagram)
-  const addTable = useDiagram((s) => s.addTable)
-  const layout = useDiagram((s) => s.layout)
-  const select = useDiagram((s) => s.select)
-  const { setTheme, resolvedTheme } = useTheme()
-  const { fitView, setCenter } = useReactFlow()
+  const diagram = useDiagram((s) => s.diagram);
+  const addTable = useDiagram((s) => s.addTable);
+  const layout = useDiagram((s) => s.layout);
+  const select = useDiagram((s) => s.select);
+  const setAllEnumsExpanded = useDiagram((s) => s.setAllEnumsExpanded);
+  const { setTheme, resolvedTheme } = useTheme();
+  const { fitView, setCenter } = useReactFlow();
 
   const run = (fn: () => void) => () => {
-    onOpenChange(false)
-    fn()
-  }
+    onOpenChange(false);
+    fn();
+  };
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} title="Command palette" description="Search tables and actions">
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Command palette"
+      description="Search tables and actions"
+    >
       <CommandInput placeholder="Jump to a table or run a command…" />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
@@ -47,8 +64,8 @@ export function CommandPalette({ open, onOpenChange, onOpenLibrary, onOpenImport
           </CommandItem>
           <CommandItem
             onSelect={run(() => {
-              layout("LR")
-              setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 20)
+              layout("LR");
+              setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 20);
             })}
           >
             <LayoutGrid /> Auto layout
@@ -65,6 +82,12 @@ export function CommandPalette({ open, onOpenChange, onOpenLibrary, onOpenImport
           <CommandItem onSelect={run(() => setTheme(resolvedTheme === "dark" ? "light" : "dark"))}>
             {resolvedTheme === "dark" ? <Sun /> : <Moon />} Toggle theme
           </CommandItem>
+          <CommandItem onSelect={run(() => setAllEnumsExpanded(true))}>
+            <Maximize2 /> Expand all enums
+          </CommandItem>
+          <CommandItem onSelect={run(() => setAllEnumsExpanded(false))}>
+            <Minimize2 /> Collapse all enums
+          </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
@@ -73,7 +96,9 @@ export function CommandPalette({ open, onOpenChange, onOpenLibrary, onOpenImport
           <CommandItem onSelect={run(() => download(`${diagram.name}.mmd`, toMermaid(diagram)))}>
             <Download /> Mermaid source
           </CommandItem>
-          <CommandItem onSelect={run(() => download(`${diagram.name}.sql`, toSql(diagram, "postgres")))}>
+          <CommandItem
+            onSelect={run(() => download(`${diagram.name}.sql`, toSql(diagram, "postgres")))}
+          >
             <Download /> PostgreSQL DDL
           </CommandItem>
         </CommandGroup>
@@ -86,19 +111,25 @@ export function CommandPalette({ open, onOpenChange, onOpenLibrary, onOpenImport
               key={table.id}
               value={`${table.name} ${table.columns.map((c) => c.name).join(" ")}`}
               onSelect={run(() => {
-                select({ kind: "table", id: table.id })
-                setCenter(table.position.x + NODE_WIDTH / 2, table.position.y + tableHeight(table) / 2, {
-                  zoom: 1,
-                  duration: 350,
-                })
+                select({ kind: "table", id: table.id });
+                setCenter(
+                  table.position.x + NODE_WIDTH / 2,
+                  table.position.y + tableHeight(table) / 2,
+                  {
+                    zoom: 1,
+                    duration: 350,
+                  },
+                );
               })}
             >
               <Table2 /> {table.name}
-              <span className="ml-auto text-[10px] text-muted-foreground">{table.columns.length} cols</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                {table.columns.length} cols
+              </span>
             </CommandItem>
           ))}
         </CommandGroup>
       </CommandList>
     </CommandDialog>
-  )
+  );
 }

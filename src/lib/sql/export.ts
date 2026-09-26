@@ -1,6 +1,7 @@
-import type { Cardinality, Diagram, Table } from "@/lib/types"
+import { isEnumType, parseEnumValues } from "@/lib/enum";
+import type { Cardinality, Column, Diagram, Table } from "@/lib/types";
 
-export type Dialect = "postgres" | "mysql" | "sqlite"
+export type Dialect = "postgres" | "mysql" | "sqlite";
 
 const TYPE_MAP: Record<Dialect, Record<string, string>> = {
   postgres: {
@@ -38,61 +39,83 @@ const TYPE_MAP: Record<Dialect, Record<string, string>> = {
     timestamp: "text",
     bytea: "blob",
   },
-}
+};
 
 const quote = (dialect: Dialect, ident: string) => {
-  const safe = ident.trim().replace(/\s+/g, "_")
-  return dialect === "mysql" ? `\`${safe}\`` : `"${safe}"`
-}
+  const safe = ident.trim().replace(/\s+/g, "_");
+  return dialect === "mysql" ? `\`${safe}\`` : `"${safe}"`;
+};
+
+const quoteLiteral = (value: string) => `'${value.replace(/'/g, "''")}'`;
+
+/** Name for the postgres `CREATE TYPE ... AS ENUM` backing an enum column. Suffixed with the
+ *  column's own id (already globally unique) so two similarly-named table/column pairs can't
+ *  collide after slugifying (e.g. "user"."role_enum" vs "user_role"."enum"). */
+const enumTypeName = (table: Table, column: Column) => {
+  const slug = `${table.name}_${column.name}_enum`.trim().toLowerCase().replace(/\s+/g, "_");
+  return `${slug}_${column.id.replace(/\W/g, "").slice(-6)}`;
+};
 
 const mapType = (dialect: Dialect, type: string) => {
-  const key = type.trim().toLowerCase()
-  return TYPE_MAP[dialect][key] ?? type.trim()
-}
+  const key = type.trim().toLowerCase();
+  return TYPE_MAP[dialect][key] ?? type.trim();
+};
+
+/** SQL spelling for a column's type, expanding enums per-dialect (named type / inline / text+CHECK).
+ *  An enum with no values yet (still being edited) falls back to a plain text column rather than
+ *  emitting syntactically-invalid `ENUM ()`/named-type SQL. */
+const columnTypeSql = (dialect: Dialect, table: Table, column: Column) => {
+  if (!isEnumType(column.type)) return mapType(dialect, column.type);
+  const values = parseEnumValues(column.type);
+  if (!values.length) return mapType(dialect, "text");
+  if (dialect === "mysql") return `enum(${values.map(quoteLiteral).join(", ")})`;
+  if (dialect === "postgres") return quote(dialect, enumTypeName(table, column));
+  return "text";
+};
 
 /** A cardinality that permits more than one row marks the "many" side of a relationship. */
-const isMany = (c: Cardinality) => c === "one-or-more" || c === "zero-or-more"
-const isOptional = (c: Cardinality) => c === "zero-or-one" || c === "zero-or-more"
+const isMany = (c: Cardinality) => c === "one-or-more" || c === "zero-or-more";
+const isOptional = (c: Cardinality) => c === "zero-or-one" || c === "zero-or-more";
 
 interface ForeignKey {
-  childTableId: string
-  childColumn: string
-  parentTable: string
-  parentColumn: string
-  optional: boolean
+  childTableId: string;
+  childColumn: string;
+  parentTable: string;
+  parentColumn: string;
+  optional: boolean;
 }
 
 function deriveForeignKeys(diagram: Diagram) {
-  const byId = new Map(diagram.tables.map((t) => [t.id, t]))
-  const keys: ForeignKey[] = []
-  const warnings: string[] = []
+  const byId = new Map(diagram.tables.map((t) => [t.id, t]));
+  const keys: ForeignKey[] = [];
+  const warnings: string[] = [];
 
   for (const rel of diagram.relationships) {
-    const source = byId.get(rel.sourceTableId)
-    const target = byId.get(rel.targetTableId)
-    if (!source || !target) continue
+    const source = byId.get(rel.sourceTableId);
+    const target = byId.get(rel.targetTableId);
+    if (!source || !target) continue;
 
     // The "many" side owns the foreign key; ties resolve to the target table.
-    const childIsTarget = isMany(rel.targetCardinality) || !isMany(rel.sourceCardinality)
-    const child: Table = childIsTarget ? target : source
-    const parent: Table = childIsTarget ? source : target
-    const parentKey = parent.columns.find((c) => c.pk)
+    const childIsTarget = isMany(rel.targetCardinality) || !isMany(rel.sourceCardinality);
+    const child: Table = childIsTarget ? target : source;
+    const parent: Table = childIsTarget ? source : target;
+    const parentKey = parent.columns.find((c) => c.pk);
     if (!parentKey) {
-      warnings.push(`-- ${parent.name} has no primary key; skipped FK from ${child.name}`)
-      continue
+      warnings.push(`-- ${parent.name} has no primary key; skipped FK from ${child.name}`);
+      continue;
     }
 
-    const explicit = childIsTarget ? rel.targetColumnId : rel.sourceColumnId
+    const explicit = childIsTarget ? rel.targetColumnId : rel.sourceColumnId;
     const childColumn =
       child.columns.find((c) => c.id === explicit) ??
       child.columns.find((c) => c.fk && c.name.toLowerCase().includes(parent.name.toLowerCase())) ??
-      child.columns.find((c) => c.name.toLowerCase() === `${parent.name.toLowerCase()}_id`)
+      child.columns.find((c) => c.name.toLowerCase() === `${parent.name.toLowerCase()}_id`);
 
     if (!childColumn) {
       warnings.push(
         `-- TODO: ${child.name} needs a foreign key column referencing ${parent.name}(${parentKey.name})`,
-      )
-      continue
+      );
+      continue;
     }
 
     keys.push({
@@ -101,55 +124,77 @@ function deriveForeignKeys(diagram: Diagram) {
       parentTable: parent.name,
       parentColumn: parentKey.name,
       optional: isOptional(childIsTarget ? rel.sourceCardinality : rel.targetCardinality),
-    })
+    });
   }
 
-  return { keys, warnings }
+  return { keys, warnings };
 }
 
 export function toSql(diagram: Diagram, dialect: Dialect = "postgres"): string {
-  const { keys, warnings } = deriveForeignKeys(diagram)
-  const out: string[] = [`-- ${diagram.name}`, "-- Generated by Cardinal", ""]
+  const { keys, warnings } = deriveForeignKeys(diagram);
+  const out: string[] = [`-- ${diagram.name}`, "-- Generated by Cardinal", ""];
+
+  if (dialect === "postgres") {
+    const enumStatements = diagram.tables.flatMap((table) =>
+      table.columns
+        .filter((column) => isEnumType(column.type) && parseEnumValues(column.type).length > 0)
+        .map(
+          (column) =>
+            `CREATE TYPE ${quote(dialect, enumTypeName(table, column))} AS ENUM (${parseEnumValues(column.type).map(quoteLiteral).join(", ")});`,
+        ),
+    );
+    if (enumStatements.length) out.push(...enumStatements, "");
+  }
 
   for (const table of diagram.tables) {
-    const body: string[] = []
+    const body: string[] = [];
     for (const column of table.columns) {
-      const bits = [quote(dialect, column.name), mapType(dialect, column.type)]
-      if (!column.nullable || column.pk) bits.push("NOT NULL")
-      if (column.uk && !column.pk) bits.push("UNIQUE")
-      if (column.defaultValue) bits.push(`DEFAULT ${column.defaultValue}`)
-      body.push(`  ${bits.join(" ")}`)
+      const bits = [quote(dialect, column.name), columnTypeSql(dialect, table, column)];
+      if (!column.nullable || column.pk) bits.push("NOT NULL");
+      if (column.uk && !column.pk) bits.push("UNIQUE");
+      if (column.defaultValue) bits.push(`DEFAULT ${column.defaultValue}`);
+      if (
+        dialect === "sqlite" &&
+        isEnumType(column.type) &&
+        parseEnumValues(column.type).length > 0
+      ) {
+        bits.push(
+          `CHECK (${quote(dialect, column.name)} IN (${parseEnumValues(column.type).map(quoteLiteral).join(", ")}))`,
+        );
+      }
+      body.push(`  ${bits.join(" ")}`);
     }
 
-    const pks = table.columns.filter((c) => c.pk)
-    if (pks.length) body.push(`  PRIMARY KEY (${pks.map((c) => quote(dialect, c.name)).join(", ")})`)
+    const pks = table.columns.filter((c) => c.pk);
+    if (pks.length)
+      body.push(`  PRIMARY KEY (${pks.map((c) => quote(dialect, c.name)).join(", ")})`);
 
     // SQLite cannot add constraints after the fact, so inline them here.
     if (dialect === "sqlite") {
       for (const fk of keys.filter((k) => k.childTableId === table.id)) {
         body.push(
           `  FOREIGN KEY (${quote(dialect, fk.childColumn)}) REFERENCES ${quote(dialect, fk.parentTable)} (${quote(dialect, fk.parentColumn)}) ON DELETE ${fk.optional ? "SET NULL" : "CASCADE"}`,
-        )
+        );
       }
     }
 
-    if (table.comment) out.push(`-- ${table.comment}`)
-    out.push(`CREATE TABLE ${quote(dialect, table.name)} (`, body.join(",\n"), ");", "")
+    if (table.comment) out.push(`-- ${table.comment}`);
+    out.push(`CREATE TABLE ${quote(dialect, table.name)} (`, body.join(",\n"), ");", "");
   }
 
   if (dialect !== "sqlite" && keys.length) {
-    out.push("-- Foreign keys")
+    out.push("-- Foreign keys");
     for (const fk of keys) {
-      const child = diagram.tables.find((t) => t.id === fk.childTableId)
-      if (!child) continue
+      const child = diagram.tables.find((t) => t.id === fk.childTableId);
+      if (!child) continue;
       out.push(
         `ALTER TABLE ${quote(dialect, child.name)} ADD CONSTRAINT ${quote(dialect, `fk_${child.name}_${fk.childColumn}`.toLowerCase())}`,
         `  FOREIGN KEY (${quote(dialect, fk.childColumn)}) REFERENCES ${quote(dialect, fk.parentTable)} (${quote(dialect, fk.parentColumn)}) ON DELETE ${fk.optional ? "SET NULL" : "CASCADE"};`,
-      )
+      );
     }
-    out.push("")
+    out.push("");
   }
 
-  if (warnings.length) out.push(...warnings, "")
-  return out.join("\n")
+  if (warnings.length) out.push(...warnings, "");
+  return out.join("\n");
 }

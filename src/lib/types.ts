@@ -1,59 +1,59 @@
-export type Cardinality = "one" | "zero-or-one" | "one-or-more" | "zero-or-more"
+export type Cardinality = "one" | "zero-or-one" | "one-or-more" | "zero-or-more";
 
 export interface Point {
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 export interface Column {
-  id: string
-  name: string
-  type: string
-  pk: boolean
-  fk: boolean
-  uk: boolean
-  nullable: boolean
-  defaultValue?: string
-  comment?: string
+  id: string;
+  name: string;
+  type: string;
+  pk: boolean;
+  fk: boolean;
+  uk: boolean;
+  nullable: boolean;
+  defaultValue?: string;
+  comment?: string;
 }
 
 export interface Table {
-  id: string
-  name: string
-  comment?: string
-  accent: string
-  position: { x: number; y: number }
-  columns: Column[]
+  id: string;
+  name: string;
+  comment?: string;
+  accent: string;
+  position: { x: number; y: number };
+  columns: Column[];
 }
 
 export interface Relationship {
-  id: string
-  sourceTableId: string
-  targetTableId: string
-  sourceColumnId?: string
-  targetColumnId?: string
+  id: string;
+  sourceTableId: string;
+  targetTableId: string;
+  sourceColumnId?: string;
+  targetColumnId?: string;
   /** cardinality at the source (left) end */
-  sourceCardinality: Cardinality
+  sourceCardinality: Cardinality;
   /** cardinality at the target (right) end */
-  targetCardinality: Cardinality
+  targetCardinality: Cardinality;
   /** mermaid `--` (identifying) vs `..` (non-identifying) */
-  identifying: boolean
-  label: string
+  identifying: boolean;
+  label: string;
   /**
    * Manual bends, in order from source to target. Each is stored as a displacement
    * from the path's natural midpoint so the shape travels with the tables instead of
    * being stranded when they move.
    */
-  waypoints?: Point[]
+  waypoints?: Point[];
 }
 
 export interface Diagram {
-  id: string
-  name: string
-  tables: Table[]
-  relationships: Relationship[]
-  createdAt: number
-  updatedAt: number
+  id: string;
+  name: string;
+  tables: Table[];
+  relationships: Relationship[];
+  createdAt: number;
+  updatedAt: number;
 }
 
 export const ACCENTS = [
@@ -65,7 +65,7 @@ export const ACCENTS = [
   "#ec4899",
   "#8b5cf6",
   "#14b8a6",
-] as const
+] as const;
 
 export const COMMON_TYPES = [
   "uuid",
@@ -88,4 +88,4 @@ export const COMMON_TYPES = [
   "timestamptz",
   "enum",
   "bytea",
-]
+];

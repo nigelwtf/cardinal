@@ -1,9 +1,9 @@
-import { newId } from "@/lib/id"
-import { autoLayout } from "@/lib/layout"
-import type { Cardinality, Column, Diagram, Table } from "@/lib/types"
-import { ACCENTS } from "@/lib/types"
+import { newId } from "@/lib/id";
+import { autoLayout } from "@/lib/layout";
+import type { Cardinality, Column, Diagram, Table } from "@/lib/types";
+import { ACCENTS } from "@/lib/types";
 
-type Spec = [name: string, type: string, flags?: string]
+type Spec = [name: string, type: string, flags?: string];
 
 const column = ([name, type, flags = ""]: Spec): Column => ({
   id: newId("col"),
@@ -13,7 +13,7 @@ const column = ([name, type, flags = ""]: Spec): Column => ({
   fk: flags.includes("FK"),
   uk: flags.includes("UK"),
   nullable: flags.includes("NULL") && !flags.includes("PK"),
-})
+});
 
 const table = (index: number, name: string, specs: Spec[]): Table => ({
   id: newId("tbl"),
@@ -21,7 +21,7 @@ const table = (index: number, name: string, specs: Spec[]): Table => ({
   accent: ACCENTS[index % ACCENTS.length],
   position: { x: 0, y: 0 },
   columns: specs.map(column),
-})
+});
 
 export function sampleDiagram(): Diagram {
   const crew = table(0, "CREW_MEMBER", [
@@ -30,41 +30,41 @@ export function sampleDiagram(): Diagram {
     ["species", "string", "NULL"],
     ["role", "string"],
     ["hired_at", "timestamptz"],
-  ])
+  ]);
   const ship = table(1, "SHIP", [
     ["id", "uuid", "PK"],
     ["registration", "string", "UK"],
     ["class", "string"],
     ["captain_id", "uuid", "FK NULL"],
-  ])
+  ]);
   const delivery = table(2, "DELIVERY", [
     ["id", "uuid", "PK"],
     ["ship_id", "uuid", "FK"],
     ["planet_id", "uuid", "FK"],
     ["status", "string"],
     ["departed_at", "timestamptz", "NULL"],
-  ])
+  ]);
   const planet = table(3, "PLANET", [
     ["id", "uuid", "PK"],
     ["name", "string", "UK"],
     ["quadrant", "string"],
     ["hostility", "int"],
-  ])
+  ]);
   const parcel = table(4, "PARCEL", [
     ["id", "uuid", "PK"],
     ["delivery_id", "uuid", "FK"],
     ["contents", "text"],
     ["is_sentient", "boolean"],
     ["mass_kg", "decimal"],
-  ])
+  ]);
   const invoice = table(5, "INVOICE", [
     ["id", "uuid", "PK"],
     ["delivery_id", "uuid", "FK UK"],
     ["amount_cents", "bigint"],
     ["settled_at", "timestamptz", "NULL"],
-  ])
+  ]);
 
-  const tables = [crew, ship, delivery, planet, parcel, invoice]
+  const tables = [crew, ship, delivery, planet, parcel, invoice];
 
   const link = (
     source: Table,
@@ -84,7 +84,7 @@ export function sampleDiagram(): Diagram {
     targetCardinality,
     identifying: true,
     label,
-  })
+  });
 
   return {
     id: newId("dgm"),
@@ -99,10 +99,10 @@ export function sampleDiagram(): Diagram {
     ],
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  }
+  };
 }
 
-export const seededDiagram = () => autoLayout(sampleDiagram())
+export const seededDiagram = () => autoLayout(sampleDiagram());
 
 export const emptyDiagram = (name = "Untitled schema"): Diagram => ({
   id: newId("dgm"),
@@ -111,4 +111,4 @@ export const emptyDiagram = (name = "Untitled schema"): Diagram => ({
   relationships: [],
   createdAt: Date.now(),
   updatedAt: Date.now(),
-})
+});

@@ -1,19 +1,27 @@
-import { ArrowDown, ArrowUp, Copy, Plus, Spline, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-import { CARDINALITY_LABEL } from "@/lib/mermaid/tokens"
-import { ACCENTS, COMMON_TYPES, type Cardinality, type Column } from "@/lib/types"
-import { useDiagram } from "@/store/useDiagram"
+import { ArrowDown, ArrowUp, Copy, Plus, Spline, Trash2, X } from "lucide-react";
+import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { formatEnumType, isEnumType, parseEnumValues } from "@/lib/enum";
+import { CARDINALITY_LABEL } from "@/lib/mermaid/tokens";
+import { ACCENTS, COMMON_TYPES, type Cardinality, type Column } from "@/lib/types";
+import { useDiagram, type Selection } from "@/store/useDiagram";
 
-const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"]
+const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"];
 
 function Flag({
   active,
@@ -22,11 +30,11 @@ function Flag({
   onClick,
   className,
 }: {
-  active: boolean
-  label: string
-  hint: string
-  onClick: () => void
-  className?: string
+  active: boolean;
+  label: string;
+  hint: string;
+  onClick: () => void;
+  className?: string;
 }) {
   return (
     <Tooltip>
@@ -46,13 +54,84 @@ function Flag({
       </TooltipTrigger>
       <TooltipContent>{hint}</TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
-function ColumnRow({ tableId, column, index, total }: { tableId: string; column: Column; index: number; total: number }) {
-  const updateColumn = useDiagram((s) => s.updateColumn)
-  const removeColumn = useDiagram((s) => s.removeColumn)
-  const reorderColumn = useDiagram((s) => s.reorderColumn)
+function EnumValuesEditor({ tableId, column }: { tableId: string; column: Column }) {
+  const updateColumn = useDiagram((s) => s.updateColumn);
+  const values = parseEnumValues(column.type);
+
+  const setValues = (next: string[]) =>
+    updateColumn(tableId, column.id, { type: formatEnumType(next) });
+
+  // The stored grammar is comma-delimited with no escaping, so a symbol can't itself contain
+  // a comma or the `<>` wrapper; split on comma up front so a paste like "A, B" (or a fast
+  // multi-symbol paste) adds each piece as its own symbol instead of corrupting the split later.
+  const addValues = (raw: string) => {
+    const additions = raw
+      .split(",")
+      .map((part) => part.replace(/[<>]/g, "").trim())
+      .filter(Boolean);
+    if (!additions.length) return;
+    const next = [...values];
+    for (const value of additions) if (!next.includes(value)) next.push(value);
+    setValues(next);
+  };
+
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1 rounded-md border border-border/60 bg-background/40 p-1.5">
+      {values.map((value, i) => (
+        <span
+          key={value}
+          className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px]"
+        >
+          {value}
+          <button
+            type="button"
+            aria-label={`Remove ${value}`}
+            onClick={() => setValues(values.filter((_, j) => j !== i))}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <X className="size-2.5" />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        placeholder="Add symbol…"
+        className="h-5 min-w-16 flex-1 bg-transparent font-mono text-[10px] outline-none placeholder:text-muted-foreground"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addValues(e.currentTarget.value);
+            e.currentTarget.value = "";
+          } else if (e.key === "Backspace" && !e.currentTarget.value && values.length) {
+            setValues(values.slice(0, -1));
+          }
+        }}
+        onBlur={(e) => {
+          addValues(e.currentTarget.value);
+          e.currentTarget.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
+function ColumnRow({
+  tableId,
+  column,
+  index,
+  total,
+}: {
+  tableId: string;
+  column: Column;
+  index: number;
+  total: number;
+}) {
+  const updateColumn = useDiagram((s) => s.updateColumn);
+  const removeColumn = useDiagram((s) => s.removeColumn);
+  const reorderColumn = useDiagram((s) => s.reorderColumn);
 
   return (
     <div className="group rounded-lg border border-border/60 bg-muted/20 p-2">
@@ -67,10 +146,16 @@ function ColumnRow({ tableId, column, index, total }: { tableId: string; column:
           value={column.type}
           list="cardinal-types"
           onChange={(e) => updateColumn(tableId, column.id, { type: e.target.value })}
+          onBlur={(e) => {
+            if (e.target.value.trim().toLowerCase() === "enum") {
+              updateColumn(tableId, column.id, { type: formatEnumType([]) });
+            }
+          }}
           className="h-7 w-24 font-mono text-[11px]"
           placeholder="type"
         />
       </div>
+      {isEnumType(column.type) && <EnumValuesEditor tableId={tableId} column={column} />}
       <div className="mt-1.5 flex items-center gap-1">
         <Flag
           active={column.pk}
@@ -98,7 +183,9 @@ function ColumnRow({ tableId, column, index, total }: { tableId: string; column:
           label="null"
           hint={column.pk ? "Primary keys are never nullable" : "Nullable"}
           className="bg-zinc-500"
-          onClick={() => !column.pk && updateColumn(tableId, column.id, { nullable: !column.nullable })}
+          onClick={() =>
+            !column.pk && updateColumn(tableId, column.id, { nullable: !column.nullable })
+          }
         />
         <div className="ml-auto flex items-center opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
           <Button
@@ -131,28 +218,34 @@ function ColumnRow({ tableId, column, index, total }: { tableId: string; column:
       </div>
       <Input
         value={column.defaultValue ?? ""}
-        onChange={(e) => updateColumn(tableId, column.id, { defaultValue: e.target.value || undefined })}
+        onChange={(e) =>
+          updateColumn(tableId, column.id, { defaultValue: e.target.value || undefined })
+        }
         className="mt-1.5 h-6 font-mono text-[10px]"
         placeholder="default value"
       />
     </div>
-  )
+  );
 }
 
 function TableInspector({ id }: { id: string }) {
-  const table = useDiagram((s) => s.diagram.tables.find((t) => t.id === id))
-  const updateTable = useDiagram((s) => s.updateTable)
-  const addColumn = useDiagram((s) => s.addColumn)
-  const removeTable = useDiagram((s) => s.removeTable)
-  const duplicateTable = useDiagram((s) => s.duplicateTable)
+  const table = useDiagram((s) => s.diagram.tables.find((t) => t.id === id));
+  const updateTable = useDiagram((s) => s.updateTable);
+  const addColumn = useDiagram((s) => s.addColumn);
+  const removeTable = useDiagram((s) => s.removeTable);
+  const duplicateTable = useDiagram((s) => s.duplicateTable);
 
-  if (!table) return null
+  if (!table) return null;
 
   return (
     <div className="space-y-4 p-3">
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">Table name</Label>
-        <Input value={table.name} onChange={(e) => updateTable(table.id, { name: e.target.value })} className="h-8" />
+        <Input
+          value={table.name}
+          onChange={(e) => updateTable(table.id, { name: e.target.value })}
+          className="h-8"
+        />
       </div>
 
       <div className="space-y-1.5">
@@ -188,87 +281,134 @@ function TableInspector({ id }: { id: string }) {
 
       <div className="flex items-center justify-between">
         <Label className="text-xs text-muted-foreground">Columns ({table.columns.length})</Label>
-        <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => addColumn(table.id)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 gap-1 text-xs"
+          onClick={() => addColumn(table.id)}
+        >
           <Plus className="size-3" /> Add
         </Button>
       </div>
 
       <div className="space-y-2">
         {table.columns.map((column, index) => (
-          <ColumnRow key={column.id} tableId={table.id} column={column} index={index} total={table.columns.length} />
+          <ColumnRow
+            key={column.id}
+            tableId={table.id}
+            column={column}
+            index={index}
+            total={table.columns.length}
+          />
         ))}
       </div>
 
       <Separator />
 
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => duplicateTable(table.id)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 gap-1.5"
+          onClick={() => duplicateTable(table.id)}
+        >
           <Copy className="size-3.5" /> Duplicate
         </Button>
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-destructive hover:text-destructive" onClick={() => removeTable(table.id)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 gap-1.5 text-destructive hover:text-destructive"
+          onClick={() => removeTable(table.id)}
+        >
           <Trash2 className="size-3.5" /> Delete
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
 function RelationshipInspector({ id }: { id: string }) {
-  const relationship = useDiagram((s) => s.diagram.relationships.find((r) => r.id === id))
-  const tables = useDiagram((s) => s.diagram.tables)
-  const update = useDiagram((s) => s.updateRelationship)
-  const remove = useDiagram((s) => s.removeRelationship)
+  const relationship = useDiagram((s) => s.diagram.relationships.find((r) => r.id === id));
+  const tables = useDiagram((s) => s.diagram.tables);
+  const update = useDiagram((s) => s.updateRelationship);
+  const remove = useDiagram((s) => s.removeRelationship);
 
-  if (!relationship) return null
-  const source = tables.find((t) => t.id === relationship.sourceTableId)
-  const target = tables.find((t) => t.id === relationship.targetTableId)
+  if (!relationship) return null;
+  const source = tables.find((t) => t.id === relationship.sourceTableId);
+  const target = tables.find((t) => t.id === relationship.targetTableId);
 
   const endpoint = (side: "source" | "target") => {
-    const table = side === "source" ? source : target
-    const tableKey = side === "source" ? "sourceTableId" : "targetTableId"
-    const columnKey = side === "source" ? "sourceColumnId" : "targetColumnId"
-    const cardinalityKey = side === "source" ? "sourceCardinality" : "targetCardinality"
+    const table = side === "source" ? source : target;
+    const tableKey = side === "source" ? "sourceTableId" : "targetTableId";
+    const columnKey = side === "source" ? "sourceColumnId" : "targetColumnId";
+    const cardinalityKey = side === "source" ? "sourceCardinality" : "targetCardinality";
 
     return (
       <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2">
         <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{side}</Label>
-        <Select value={relationship[tableKey]} onValueChange={(value) => update(id, { [tableKey]: value, [columnKey]: undefined })}>
-          <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+        <Select
+          value={relationship[tableKey]}
+          onValueChange={(value) => update(id, { [tableKey]: value, [columnKey]: undefined })}
+        >
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {tables.map((t) => (
-              <SelectItem key={t.id} value={t.id} className="text-xs">{t.name}</SelectItem>
+              <SelectItem key={t.id} value={t.id} className="text-xs">
+                {t.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select
           value={relationship[columnKey] ?? "__none"}
-          onValueChange={(value) => update(id, { [columnKey]: value === "__none" ? undefined : value })}
+          onValueChange={(value) =>
+            update(id, { [columnKey]: value === "__none" ? undefined : value })
+          }
         >
-          <SelectTrigger className="h-7 w-full text-xs"><SelectValue placeholder="Anchor column" /></SelectTrigger>
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue placeholder="Anchor column" />
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__none" className="text-xs">Whole table</SelectItem>
+            <SelectItem value="__none" className="text-xs">
+              Whole table
+            </SelectItem>
             {table?.columns.map((c) => (
-              <SelectItem key={c.id} value={c.id} className="text-xs">{c.name}</SelectItem>
+              <SelectItem key={c.id} value={c.id} className="text-xs">
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={relationship[cardinalityKey]} onValueChange={(value) => update(id, { [cardinalityKey]: value as Cardinality })}>
-          <SelectTrigger className="h-7 w-full text-xs"><SelectValue /></SelectTrigger>
+        <Select
+          value={relationship[cardinalityKey]}
+          onValueChange={(value) => update(id, { [cardinalityKey]: value as Cardinality })}
+        >
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {CARDINALITIES.map((c) => (
-              <SelectItem key={c} value={c} className="text-xs">{CARDINALITY_LABEL[c]}</SelectItem>
+              <SelectItem key={c} value={c} className="text-xs">
+                {CARDINALITY_LABEL[c]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-4 p-3">
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">Label</Label>
-        <Input value={relationship.label} onChange={(e) => update(id, { label: e.target.value })} className="h-8" />
+        <Input
+          value={relationship.label}
+          onChange={(e) => update(id, { label: e.target.value })}
+          className="h-8"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -281,7 +421,10 @@ function RelationshipInspector({ id }: { id: string }) {
           <Label className="text-xs">Identifying</Label>
           <p className="text-[10px] text-muted-foreground">Solid line, child depends on parent</p>
         </div>
-        <Switch checked={relationship.identifying} onCheckedChange={(v) => update(id, { identifying: v })} />
+        <Switch
+          checked={relationship.identifying}
+          onCheckedChange={(v) => update(id, { identifying: v })}
+        />
       </div>
 
       {relationship.waypoints?.length ? (
@@ -295,16 +438,21 @@ function RelationshipInspector({ id }: { id: string }) {
         </Button>
       ) : null}
 
-      <Button variant="outline" size="sm" className="w-full gap-1.5 text-destructive hover:text-destructive" onClick={() => remove(id)}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full gap-1.5 text-destructive hover:text-destructive"
+        onClick={() => remove(id)}
+      >
         <Trash2 className="size-3.5" /> Delete relationship
       </Button>
     </div>
-  )
+  );
 }
 
 function DiagramInspector() {
-  const diagram = useDiagram((s) => s.diagram)
-  const rename = useDiagram((s) => s.renameDiagram)
+  const diagram = useDiagram((s) => s.diagram);
+  const rename = useDiagram((s) => s.renameDiagram);
 
   return (
     <div className="space-y-4 p-3">
@@ -340,16 +488,36 @@ function DiagramInspector() {
         ].map(([keys, description]) => (
           <div key={keys} className="flex items-center justify-between gap-3">
             <span>{description}</span>
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">{keys}</kbd>
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+              {keys}
+            </kbd>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
 
+const SELECTION_LABEL: Record<Selection["kind"], string> = {
+  table: "Table",
+  relationship: "Relationship",
+  none: "Schema",
+};
+
 export function Inspector() {
-  const selection = useDiagram((s) => s.selection)
+  const selection = useDiagram((s) => s.selection);
+
+  let panel: ReactNode;
+  switch (selection.kind) {
+    case "table":
+      panel = <TableInspector id={selection.id} />;
+      break;
+    case "relationship":
+      panel = <RelationshipInspector id={selection.id} />;
+      break;
+    default:
+      panel = <DiagramInspector />;
+  }
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -359,17 +527,9 @@ export function Inspector() {
         ))}
       </datalist>
       <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {selection.kind === "table" ? "Table" : selection.kind === "relationship" ? "Relationship" : "Schema"}
+        {SELECTION_LABEL[selection.kind]}
       </div>
-      <ScrollArea className="flex-1">
-        {selection.kind === "table" ? (
-          <TableInspector id={selection.id} />
-        ) : selection.kind === "relationship" ? (
-          <RelationshipInspector id={selection.id} />
-        ) : (
-          <DiagramInspector />
-        )}
-      </ScrollArea>
+      <ScrollArea className="flex-1">{panel}</ScrollArea>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import { useState } from "react"
-import { useReactFlow } from "@xyflow/react"
-import cardinalLogo from "@/assets/cardinal.png"
+import { useState } from "react";
+import { useReactFlow } from "@xyflow/react";
+import cardinalLogo from "@/assets/cardinal.png";
 import {
   Check,
   ChevronDown,
@@ -17,49 +17,49 @@ import {
   Sun,
   Undo2,
   Upload,
-} from "lucide-react"
-import { useTheme } from "next-themes"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { download } from "@/lib/download"
-import { toMermaid } from "@/lib/mermaid/serialize"
-import { toSql } from "@/lib/sql/export"
-import { useDiagram } from "@/store/useDiagram"
-import { exportPng, exportSvg } from "./ImageExport"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { download } from "@/lib/download";
+import { toMermaid } from "@/lib/mermaid/serialize";
+import { toSql } from "@/lib/sql/export";
+import { useDiagram } from "@/store/useDiagram";
+import { exportPng, exportSvg } from "./ImageExport";
 
 interface ToolbarProps {
-  onOpenLibrary: () => void
-  onOpenImport: () => void
+  onOpenLibrary: () => void;
+  onOpenImport: () => void;
 }
 
 export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
-  const diagram = useDiagram((s) => s.diagram)
-  const dirty = useDiagram((s) => s.dirty)
-  const canUndo = useDiagram((s) => s.past.length > 0)
-  const canRedo = useDiagram((s) => s.future.length > 0)
-  const undo = useDiagram((s) => s.undo)
-  const redo = useDiagram((s) => s.redo)
-  const addTable = useDiagram((s) => s.addTable)
-  const layout = useDiagram((s) => s.layout)
-  const rename = useDiagram((s) => s.renameDiagram)
-  const { resolvedTheme, setTheme } = useTheme()
-  const { getNodes, fitView } = useReactFlow()
-  const [editingName, setEditingName] = useState(false)
+  const diagram = useDiagram((s) => s.diagram);
+  const dirty = useDiagram((s) => s.dirty);
+  const canUndo = useDiagram((s) => s.past.length > 0);
+  const canRedo = useDiagram((s) => s.future.length > 0);
+  const undo = useDiagram((s) => s.undo);
+  const redo = useDiagram((s) => s.redo);
+  const addTable = useDiagram((s) => s.addTable);
+  const layout = useDiagram((s) => s.layout);
+  const rename = useDiagram((s) => s.renameDiagram);
+  const { resolvedTheme, setTheme } = useTheme();
+  const { getNodes, fitView } = useReactFlow();
+  const [editingName, setEditingName] = useState(false);
 
   const runLayout = (direction: "LR" | "TB") => {
-    layout(direction)
-    setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 20)
-  }
+    layout(direction);
+    setTimeout(() => fitView({ padding: 0.2, duration: 400 }), 20);
+  };
 
   const exportImage = async (format: "png" | "svg") => {
     try {
@@ -67,13 +67,13 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
         nodes: getNodes(),
         filename: `${diagram.name}.${format}`,
         dark: resolvedTheme === "dark",
-      }
-      await (format === "png" ? exportPng(options) : exportSvg(options))
-      toast.success(`Exported ${format.toUpperCase()}`)
+      };
+      await (format === "png" ? exportPng(options) : exportSvg(options));
+      toast.success(`Exported ${format.toUpperCase()}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Export failed")
+      toast.error(error instanceof Error ? error.message : "Export failed");
     }
-  }
+  };
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-card px-3">
@@ -82,7 +82,7 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
         <span className="text-sm font-semibold tracking-tight">Cardinal</span>
       </div>
 
-      <Separator orientation="vertical" className="mx-1 !h-5" />
+      <Separator orientation="vertical" className="mx-1 !self-center !h-5" />
 
       {editingName ? (
         <Input
@@ -106,7 +106,11 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            {dirty ? <Cloud className="size-3 animate-pulse" /> : <Check className="size-3 text-emerald-500" />}
+            {dirty ? (
+              <Cloud className="size-3 animate-pulse" />
+            ) : (
+              <Check className="size-3 text-emerald-500" />
+            )}
           </span>
         </TooltipTrigger>
         <TooltipContent>{dirty ? "Saving to IndexedDB…" : "Saved locally"}</TooltipContent>
@@ -115,7 +119,13 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
       <div className="ml-auto flex items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="icon" variant="ghost" className="size-8" disabled={!canUndo} onClick={undo}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              disabled={!canUndo}
+              onClick={undo}
+            >
               <Undo2 className="size-4" />
             </Button>
           </TooltipTrigger>
@@ -123,16 +133,27 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="icon" variant="ghost" className="size-8" disabled={!canRedo} onClick={redo}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              disabled={!canRedo}
+              onClick={redo}
+            >
               <Redo2 className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Redo ⇧⌘Z</TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="mx-1 !h-5" />
+        <Separator orientation="vertical" className="mx-1 !self-center !h-5" />
 
-        <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs" onClick={() => addTable()}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 gap-1.5 text-xs"
+          onClick={() => addTable()}
+        >
           <Plus className="size-3.5" /> Table
         </Button>
 
@@ -146,7 +167,9 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
             <DropdownMenuItem onClick={() => runLayout("LR")}>Left to right</DropdownMenuItem>
             <DropdownMenuItem onClick={() => runLayout("TB")}>Top to bottom</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => fitView({ padding: 0.2, duration: 300 })}>Fit to screen</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => fitView({ padding: 0.2, duration: 300 })}>
+              Fit to screen
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -171,12 +194,18 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
             <DropdownMenuItem onClick={() => download(`${diagram.name}.mmd`, toMermaid(diagram))}>
               <FileText className="size-3.5" /> Mermaid
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => download(`${diagram.name}.sql`, toSql(diagram, "postgres"))}>
+            <DropdownMenuItem
+              onClick={() => download(`${diagram.name}.sql`, toSql(diagram, "postgres"))}
+            >
               <FileText className="size-3.5" /> PostgreSQL DDL
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
-                download(`${diagram.name}.cardinal.json`, JSON.stringify(diagram, null, 2), "application/json")
+                download(
+                  `${diagram.name}.cardinal.json`,
+                  JSON.stringify(diagram, null, 2),
+                  "application/json",
+                )
               }
             >
               <FileJson className="size-3.5" /> Cardinal JSON
@@ -188,7 +217,7 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
           <FolderOpen className="size-3.5" /> Library
         </Button>
 
-        <Separator orientation="vertical" className="mx-1 !h-5" />
+        <Separator orientation="vertical" className="mx-1 !self-center !h-5" />
 
         <Button
           size="icon"
@@ -201,5 +230,5 @@ export function Toolbar({ onOpenLibrary, onOpenImport }: ToolbarProps) {
         </Button>
       </div>
     </header>
-  )
+  );
 }

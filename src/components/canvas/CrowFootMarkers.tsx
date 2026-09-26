@@ -1,49 +1,47 @@
-import type { Cardinality } from "@/lib/types"
+import type { Cardinality } from "@/lib/types";
 
-const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"]
+const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"];
 
 export const markerUrl = (cardinality: Cardinality, end: "start" | "end") =>
-  `url(#cf-${cardinality}-${end})`
+  `url(#cf-${cardinality}-${end})`;
 
-const Bar = ({ x }: { x: number }) => <line x1={x} y1={5} x2={x} y2={19} />
-const Circle = ({ x }: { x: number }) => (
-  <circle cx={x} cy={12} r={3.4} fill="var(--background)" />
-)
+const Bar = ({ x }: { x: number }) => <line x1={x} y1={5} x2={x} y2={19} />;
+const Circle = ({ x }: { x: number }) => <circle cx={x} cy={12} r={3.4} fill="var(--background)" />;
 const Foot = () => (
   <>
     <line x1={10} y1={12} x2={22} y2={5} />
     <line x1={10} y1={12} x2={22} y2={19} />
     <line x1={10} y1={12} x2={22} y2={12} />
   </>
-)
+);
 
 const Glyph = ({ cardinality }: { cardinality: Cardinality }) => {
   switch (cardinality) {
     case "one":
-      return <Bar x={16} />
+      return <Bar x={16} />;
     case "zero-or-one":
       return (
         <>
           <Circle x={7} />
           <Bar x={16} />
         </>
-      )
+      );
     case "one-or-more":
       return (
         <>
           <Bar x={7} />
           <Foot />
         </>
-      )
+      );
     case "zero-or-more":
       return (
         <>
           <Circle x={5} />
           <Foot />
         </>
-      )
+      );
   }
-}
+};
 
 /**
  * Crow's-foot notation rendered as SVG markers. `auto-start-reverse` mirrors the
@@ -74,5 +72,5 @@ export function CrowFootMarkers() {
         )}
       </defs>
     </svg>
-  )
+  );
 }

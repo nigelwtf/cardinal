@@ -1,36 +1,43 @@
-import { memo, useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
-import { EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react"
-import { cn } from "@/lib/utils"
-import type { Cardinality, Point } from "@/lib/types"
-import { useDiagram } from "@/store/useDiagram"
-import { markerUrl } from "./CrowFootMarkers"
-import { STUB, midpoint, segmentAnchors, waypointPath } from "./edgePath"
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import { EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
+import { cn } from "@/lib/utils";
+import type { Cardinality, Point } from "@/lib/types";
+import { useDiagram } from "@/store/useDiagram";
+import { markerUrl } from "./CrowFootMarkers";
+import { STUB, midpoint, segmentAnchors, waypointPath } from "./edgePath";
 
 export interface RelationshipEdgeData extends Record<string, unknown> {
-  label: string
-  identifying: boolean
-  sourceCardinality: Cardinality
-  targetCardinality: Cardinality
-  waypoints?: Point[]
-  dimmed: boolean
+  label: string;
+  identifying: boolean;
+  sourceCardinality: Cardinality;
+  targetCardinality: Cardinality;
+  waypoints?: Point[];
+  dimmed: boolean;
 }
 
 /** Waypoints land on this grid so hand-drawn routes still line up with each other. */
-const GRID = 8
+const GRID = 8;
 /** How close a drag must come to a neighbour before it snaps into line with it. */
-const ALIGN = 7
+const ALIGN = 7;
 /** Keeps handles alive while the cursor crosses the gap between the line and a dot. */
-const HOVER_GRACE = 140
+const HOVER_GRACE = 140;
 
-const snap = (value: number) => Math.round(value / GRID) * GRID
+const snap = (value: number) => Math.round(value / GRID) * GRID;
 
 function alignToNeighbours(point: Point, neighbours: Point[]): Point {
-  let { x, y } = point
+  let { x, y } = point;
   for (const neighbour of neighbours) {
-    if (Math.abs(x - neighbour.x) <= ALIGN) x = neighbour.x
-    if (Math.abs(y - neighbour.y) <= ALIGN) y = neighbour.y
+    if (Math.abs(x - neighbour.x) <= ALIGN) x = neighbour.x;
+    if (Math.abs(y - neighbour.y) <= ALIGN) y = neighbour.y;
   }
-  return { x, y }
+  return { x, y };
 }
 
 function RelationshipEdgeInner({
@@ -44,110 +51,121 @@ function RelationshipEdgeInner({
   selected,
   data,
 }: EdgeProps & { data?: RelationshipEdgeData }) {
-  const setWaypoints = useDiagram((s) => s.setWaypoints)
-  const commitSnapshot = useDiagram((s) => s.commitSnapshot)
-  const { screenToFlowPosition } = useReactFlow()
+  const setWaypoints = useDiagram((s) => s.setWaypoints);
+  const commitSnapshot = useDiagram((s) => s.commitSnapshot);
+  const { screenToFlowPosition } = useReactFlow();
 
-  const [hovered, setHovered] = useState(false)
-  const [dragging, setDragging] = useState(false)
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const releaseGesture = useRef<(() => void) | null>(null)
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const releaseGesture = useRef<(() => void) | null>(null);
 
   useEffect(
     () => () => {
-      clearTimeout(hoverTimer.current)
-      releaseGesture.current?.()
+      clearTimeout(hoverTimer.current);
+      releaseGesture.current?.();
     },
     [],
-  )
+  );
 
   // The dots live in a portal outside this edge's SVG group, so moving the cursor
   // from the line to a dot fires mouseleave. A short grace period bridges the gap.
   const onEnter = useCallback(() => {
-    clearTimeout(hoverTimer.current)
-    setHovered(true)
-  }, [])
+    clearTimeout(hoverTimer.current);
+    setHovered(true);
+  }, []);
 
   const onLeave = useCallback(() => {
-    clearTimeout(hoverTimer.current)
-    hoverTimer.current = setTimeout(() => setHovered(false), HOVER_GRACE)
-  }, [])
+    clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHovered(false), HOVER_GRACE);
+  }, []);
 
-  const geometry = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition }
+  const geometry = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition };
   const [straightPath, naturalX, naturalY] = getSmoothStepPath({
     ...geometry,
     borderRadius: 12,
     offset: STUB,
-  })
+  });
 
-  const natural: Point = { x: naturalX, y: naturalY }
-  const stored = data?.waypoints ?? []
+  const natural: Point = { x: naturalX, y: naturalY };
+  const stored = data?.waypoints ?? [];
   // Waypoints are kept relative to the natural midpoint so they follow the tables.
-  const absolute = stored.map((point) => ({ x: natural.x + point.x, y: natural.y + point.y }))
-  const path = absolute.length ? waypointPath(geometry, absolute) : straightPath
-  const anchors = segmentAnchors(geometry, absolute)
+  const absolute = stored.map((point) => ({ x: natural.x + point.x, y: natural.y + point.y }));
+  const path = absolute.length ? waypointPath(geometry, absolute) : straightPath;
+  const anchors = segmentAnchors(geometry, absolute);
 
   const toRelative = (points: Point[]) =>
-    points.map((point) => ({ x: Math.round(point.x - natural.x), y: Math.round(point.y - natural.y) }))
+    points.map((point) => ({
+      x: Math.round(point.x - natural.x),
+      y: Math.round(point.y - natural.y),
+    }));
 
   /**
    * `index` is the waypoint being moved. When `insert` is set the drag creates a new
    * waypoint at that index instead, which is how the ghost dots on each segment work.
    */
-  const beginDrag = (event: ReactPointerEvent<HTMLButtonElement>, index: number, insert: boolean) => {
-    event.stopPropagation()
-    event.preventDefault()
-    releaseGesture.current?.()
+  const beginDrag = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    index: number,
+    insert: boolean,
+  ) => {
+    event.stopPropagation();
+    event.preventDefault();
+    releaseGesture.current?.();
 
-    const snapshot = useDiagram.getState().diagram
-    const origin = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+    const snapshot = useDiagram.getState().diagram;
+    const origin = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     const startPoints = insert
-      ? [...absolute.slice(0, index), midpoint(anchors[index], anchors[index + 1]), ...absolute.slice(index)]
-      : absolute
-    const start = startPoints[index]
-    setDragging(true)
+      ? [
+          ...absolute.slice(0, index),
+          midpoint(anchors[index], anchors[index + 1]),
+          ...absolute.slice(index),
+        ]
+      : absolute;
+    const start = startPoints[index];
+    setDragging(true);
 
     const onMove = (move: PointerEvent) => {
-      const position = screenToFlowPosition({ x: move.clientX, y: move.clientY })
-      const next = [...startPoints]
+      const position = screenToFlowPosition({ x: move.clientX, y: move.clientY });
+      const next = [...startPoints];
       const raw = {
         x: start.x + position.x - origin.x,
         y: start.y + position.y - origin.y,
-      }
+      };
       // Alt bypasses the grid for fine positioning.
-      const gridded = move.altKey ? raw : { x: snap(raw.x), y: snap(raw.y) }
+      const gridded = move.altKey ? raw : { x: snap(raw.x), y: snap(raw.y) };
       next[index] = alignToNeighbours(
         gridded,
         [next[index - 1], next[index + 1], anchors[0], anchors[anchors.length - 1]].filter(
           (point): point is Point => Boolean(point),
         ),
-      )
-      setWaypoints(id, toRelative(next), false)
-    }
+      );
+      setWaypoints(id, toRelative(next), false);
+    };
 
     const finish = () => {
-      window.removeEventListener("pointermove", onMove)
-      window.removeEventListener("pointerup", finish)
-      window.removeEventListener("pointercancel", finish)
-      releaseGesture.current = null
-      setDragging(false)
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+      releaseGesture.current = null;
+      setDragging(false);
       // One undo entry per gesture, matching how node drags behave.
-      commitSnapshot(snapshot)
-    }
+      commitSnapshot(snapshot);
+    };
 
-    releaseGesture.current = finish
-    window.addEventListener("pointermove", onMove)
-    window.addEventListener("pointerup", finish)
-    window.addEventListener("pointercancel", finish)
-  }
+    releaseGesture.current = finish;
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+  };
 
   const removeWaypoint = (index: number) =>
-    setWaypoints(id, toRelative(absolute.filter((_, at) => at !== index)))
+    setWaypoints(id, toRelative(absolute.filter((_, at) => at !== index)));
 
-  const stroke = selected ? "var(--primary)" : "var(--muted-foreground)"
-  const active = Boolean(selected || hovered || dragging)
-  const label = data?.label
-  const labelAnchor = absolute.length ? absolute[Math.floor((absolute.length - 1) / 2)] : natural
+  const stroke = selected ? "var(--primary)" : "var(--muted-foreground)";
+  const active = Boolean(selected || hovered || dragging);
+  const label = data?.label;
+  const labelAnchor = absolute.length ? absolute[Math.floor((absolute.length - 1) / 2)] : natural;
 
   return (
     <>
@@ -171,7 +189,9 @@ function RelationshipEdgeInner({
       <EdgeLabelRenderer>
         {label && (
           <div
-            style={{ transform: `translate(-50%, -50%) translate(${labelAnchor.x}px, ${labelAnchor.y - (active ? 16 : 0)}px)` }}
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelAnchor.x}px, ${labelAnchor.y - (active ? 16 : 0)}px)`,
+            }}
             className={cn(
               "pointer-events-none absolute rounded-full border bg-background/90 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm transition-transform",
               selected ? "border-primary text-primary" : "border-border text-muted-foreground",
@@ -196,8 +216,8 @@ function RelationshipEdgeInner({
                 onMouseLeave={onLeave}
                 onPointerDown={(event) => beginDrag(event, index, false)}
                 onDoubleClick={(event) => {
-                  event.stopPropagation()
-                  removeWaypoint(index)
+                  event.stopPropagation();
+                  removeWaypoint(index);
                 }}
               >
                 <span
@@ -210,14 +230,16 @@ function RelationshipEdgeInner({
             ))}
 
             {anchors.slice(0, -1).map((anchor, index) => {
-              const ghost = midpoint(anchor, anchors[index + 1])
+              const ghost = midpoint(anchor, anchors[index + 1]);
               return (
                 <button
                   key={`ghost-${index}`}
                   type="button"
                   aria-label="Drag to add a bend"
                   title="Drag to add a bend"
-                  style={{ transform: `translate(-50%, -50%) translate(${ghost.x}px, ${ghost.y}px)` }}
+                  style={{
+                    transform: `translate(-50%, -50%) translate(${ghost.x}px, ${ghost.y}px)`,
+                  }}
                   className="nodrag nopan group/ghost pointer-events-auto absolute grid size-6 cursor-grab place-items-center rounded-full active:cursor-grabbing"
                   onMouseEnter={onEnter}
                   onMouseLeave={onLeave}
@@ -231,13 +253,13 @@ function RelationshipEdgeInner({
                     )}
                   />
                 </button>
-              )
+              );
             })}
           </>
         )}
       </EdgeLabelRenderer>
     </>
-  )
+  );
 }
 
-export const RelationshipEdge = memo(RelationshipEdgeInner)
+export const RelationshipEdge = memo(RelationshipEdgeInner);

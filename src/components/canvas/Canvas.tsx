@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react"
+import { useCallback, useMemo, useRef } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -13,39 +13,45 @@ import {
   type OnReconnect,
   useReactFlow,
   useViewport,
-} from "@xyflow/react"
-import "@xyflow/react/dist/style.css"
-import { useDiagram } from "@/store/useDiagram"
-import { NODE_WIDTH, tableHeight } from "@/lib/layout"
-import { CrowFootMarkers } from "./CrowFootMarkers"
-import { RelationshipEdge, type RelationshipEdgeData } from "./RelationshipEdge"
-import { TABLE_HANDLE, TableNode, columnFromHandle, handleId, type TableNodeData } from "./TableNode"
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { useDiagram } from "@/store/useDiagram";
+import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { CrowFootMarkers } from "./CrowFootMarkers";
+import { RelationshipEdge, type RelationshipEdgeData } from "./RelationshipEdge";
+import {
+  TABLE_HANDLE,
+  TableNode,
+  columnFromHandle,
+  handleId,
+  type TableNodeData,
+} from "./TableNode";
 
-const nodeTypes = { table: TableNode }
-const edgeTypes = { relationship: RelationshipEdge }
+const nodeTypes = { table: TableNode };
+const edgeTypes = { relationship: RelationshipEdge };
 
 function ZoomBadge() {
-  const { zoom } = useViewport()
+  const { zoom } = useViewport();
   return (
     <div className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-medium tabular-nums text-foreground shadow-sm">
       {Math.round(zoom * 100)}%
     </div>
-  )
+  );
 }
 
 export function Canvas() {
-  const diagram = useDiagram((s) => s.diagram)
-  const selection = useDiagram((s) => s.selection)
-  const select = useDiagram((s) => s.select)
-  const moveTable = useDiagram((s) => s.moveTable)
-  const addRelationship = useDiagram((s) => s.addRelationship)
-  const updateRelationship = useDiagram((s) => s.updateRelationship)
-  const removeTable = useDiagram((s) => s.removeTable)
-  const removeRelationship = useDiagram((s) => s.removeRelationship)
-  const addTable = useDiagram((s) => s.addTable)
-  const commitSnapshot = useDiagram((s) => s.commitSnapshot)
-  const updateColumn = useDiagram((s) => s.updateColumn)
-  const { screenToFlowPosition } = useReactFlow()
+  const diagram = useDiagram((s) => s.diagram);
+  const selection = useDiagram((s) => s.selection);
+  const select = useDiagram((s) => s.select);
+  const moveTable = useDiagram((s) => s.moveTable);
+  const addRelationship = useDiagram((s) => s.addRelationship);
+  const updateRelationship = useDiagram((s) => s.updateRelationship);
+  const removeTable = useDiagram((s) => s.removeTable);
+  const removeRelationship = useDiagram((s) => s.removeRelationship);
+  const addTable = useDiagram((s) => s.addTable);
+  const commitSnapshot = useDiagram((s) => s.commitSnapshot);
+  const updateColumn = useDiagram((s) => s.updateColumn);
+  const { screenToFlowPosition } = useReactFlow();
 
   const selectedRelationship = useMemo(
     () =>
@@ -53,7 +59,7 @@ export function Canvas() {
         ? diagram.relationships.find((r) => r.id === selection.id)
         : undefined,
     [diagram.relationships, selection],
-  )
+  );
 
   const highlightedColumns = useMemo(
     () =>
@@ -61,7 +67,7 @@ export function Canvas() {
         (id): id is string => Boolean(id),
       ),
     [selectedRelationship],
-  )
+  );
 
   const nodes: Node<TableNodeData>[] = useMemo(
     () =>
@@ -75,21 +81,21 @@ export function Canvas() {
         height: tableHeight(table),
       })),
     [diagram.tables, highlightedColumns, selection],
-  )
+  );
 
   const edges: Edge<RelationshipEdgeData>[] = useMemo(() => {
-    const byId = new Map(diagram.tables.map((t) => [t.id, t]))
+    const byId = new Map(diagram.tables.map((t) => [t.id, t]));
     return diagram.relationships.flatMap((rel) => {
-      const source = byId.get(rel.sourceTableId)
-      const target = byId.get(rel.targetTableId)
-      if (!source || !target) return []
+      const source = byId.get(rel.sourceTableId);
+      const target = byId.get(rel.targetTableId);
+      if (!source || !target) return [];
 
-      const sourceRight = source.position.x + NODE_WIDTH / 2 <= target.position.x + NODE_WIDTH / 2
-      const sourceSide = sourceRight ? "right" : "left"
-      const targetSide = sourceRight ? "left" : "right"
+      const sourceRight = source.position.x + NODE_WIDTH / 2 <= target.position.x + NODE_WIDTH / 2;
+      const sourceSide = sourceRight ? "right" : "left";
+      const targetSide = sourceRight ? "left" : "right";
 
       const anchor = (table: typeof source, columnId?: string) =>
-        columnId && table.columns.some((c) => c.id === columnId) ? columnId : TABLE_HANDLE
+        columnId && table.columns.some((c) => c.id === columnId) ? columnId : TABLE_HANDLE;
 
       return [
         {
@@ -110,32 +116,32 @@ export function Canvas() {
             dimmed: false,
           },
         },
-      ]
-    })
-  }, [diagram.relationships, diagram.tables, selection])
+      ];
+    });
+  }, [diagram.relationships, diagram.tables, selection]);
 
   // Positions stream in on every pointer move, so history gets one entry per
   // gesture rather than one per frame.
-  const dragOrigin = useRef<typeof diagram | null>(null)
+  const dragOrigin = useRef<typeof diagram | null>(null);
 
   const onNodesChange = useCallback(
     (changes: NodeChange<Node<TableNodeData>>[]) => {
       for (const change of changes) {
         if (change.type === "position" && change.position) {
-          moveTable(change.id, change.position, false)
+          moveTable(change.id, change.position, false);
         }
       }
     },
     [moveTable],
-  )
+  );
 
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
-      if (!connection.source || !connection.target) return
-      const sourceColumnId = columnFromHandle(connection.sourceHandle)
-      const targetColumnId = columnFromHandle(connection.targetHandle)
-      const targetTable = diagram.tables.find((t) => t.id === connection.target)
-      const sourceTable = diagram.tables.find((t) => t.id === connection.source)
+      if (!connection.source || !connection.target) return;
+      const sourceColumnId = columnFromHandle(connection.sourceHandle);
+      const targetColumnId = columnFromHandle(connection.targetHandle);
+      const targetTable = diagram.tables.find((t) => t.id === connection.target);
+      const sourceTable = diagram.tables.find((t) => t.id === connection.source);
 
       addRelationship({
         sourceTableId: connection.source,
@@ -146,29 +152,30 @@ export function Canvas() {
         targetCardinality: "zero-or-more",
         identifying: true,
         label: sourceTable ? `has ${targetTable?.name.toLowerCase() ?? "rows"}` : "relates to",
-      })
+      });
 
       // The many-side column is now a foreign key.
-      if (targetColumnId && connection.target) updateColumn(connection.target, targetColumnId, { fk: true })
+      if (targetColumnId && connection.target)
+        updateColumn(connection.target, targetColumnId, { fk: true });
     },
     [addRelationship, diagram.tables, updateColumn],
-  )
+  );
 
   // Dragging an edge end onto a different column re-points the relationship.
   const onReconnect: OnReconnect = useCallback(
     (oldEdge, connection) => {
-      if (!connection.source || !connection.target) return
-      const targetColumnId = columnFromHandle(connection.targetHandle)
+      if (!connection.source || !connection.target) return;
+      const targetColumnId = columnFromHandle(connection.targetHandle);
       updateRelationship(oldEdge.id, {
         sourceTableId: connection.source,
         targetTableId: connection.target,
         sourceColumnId: columnFromHandle(connection.sourceHandle),
         targetColumnId,
-      })
-      if (targetColumnId) updateColumn(connection.target, targetColumnId, { fk: true })
+      });
+      if (targetColumnId) updateColumn(connection.target, targetColumnId, { fk: true });
     },
     [updateColumn, updateRelationship],
-  )
+  );
 
   return (
     <div className="relative size-full">
@@ -183,11 +190,11 @@ export function Canvas() {
         onReconnect={onReconnect}
         reconnectRadius={16}
         onNodeDragStart={() => {
-          dragOrigin.current = useDiagram.getState().diagram
+          dragOrigin.current = useDiagram.getState().diagram;
         }}
         onNodeDragStop={() => {
-          if (dragOrigin.current) commitSnapshot(dragOrigin.current)
-          dragOrigin.current = null
+          if (dragOrigin.current) commitSnapshot(dragOrigin.current);
+          dragOrigin.current = null;
         }}
         onNodeClick={(_, node) => select({ kind: "table", id: node.id })}
         onEdgeClick={(_, edge) => select({ kind: "relationship", id: edge.id })}
@@ -195,9 +202,11 @@ export function Canvas() {
         onNodesDelete={(deleted) => deleted.forEach((n) => removeTable(n.id))}
         onEdgesDelete={(deleted) => deleted.forEach((e) => removeRelationship(e.id))}
         onDoubleClick={(event) => {
-          const target = event.target as HTMLElement
-          if (!target.classList.contains("react-flow__pane")) return
-          addTable(screenToFlowPosition({ x: event.clientX - NODE_WIDTH / 2, y: event.clientY - 20 }))
+          const target = event.target as HTMLElement;
+          if (!target.classList.contains("react-flow__pane")) return;
+          addTable(
+            screenToFlowPosition({ x: event.clientX - NODE_WIDTH / 2, y: event.clientY - 20 }),
+          );
         }}
         zoomOnDoubleClick={false}
         fitView
@@ -211,7 +220,10 @@ export function Canvas() {
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1} className="!bg-muted/30" />
         <div className="absolute bottom-4 left-4 z-[5] flex items-end gap-2">
-          <Controls showInteractive={false} className="!static !m-0 overflow-hidden !rounded-lg !border !border-border !bg-card !shadow-sm [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground hover:[&_button]:!bg-accent" />
+          <Controls
+            showInteractive={false}
+            className="!static !m-0 overflow-hidden !rounded-lg !border !border-border !bg-card !shadow-sm [&_button]:!border-border [&_button]:!bg-card [&_button]:!text-foreground hover:[&_button]:!bg-accent"
+          />
           <ZoomBadge />
         </div>
         <MiniMap
@@ -223,5 +235,5 @@ export function Canvas() {
         />
       </ReactFlow>
     </div>
-  )
+  );
 }
