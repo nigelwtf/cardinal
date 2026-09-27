@@ -16,7 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useDiagram } from "@/store/useDiagram";
-import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { DEFAULT_TABLE_WIDTH, tableCenter, tableHeight, tableWidth } from "@/lib/layout";
 import { CrowFootMarkers } from "./CrowFootMarkers";
 import { RelationshipEdge, type RelationshipEdgeData } from "./RelationshipEdge";
 import {
@@ -77,7 +77,7 @@ export function Canvas() {
         position: table.position,
         selected: selection.kind === "table" && selection.id === table.id,
         data: { table, highlightedColumns, dimmed: false },
-        width: NODE_WIDTH,
+        width: tableWidth(table),
         height: tableHeight(table),
       })),
     [diagram.tables, highlightedColumns, selection],
@@ -90,7 +90,7 @@ export function Canvas() {
       const target = byId.get(rel.targetTableId);
       if (!source || !target) return [];
 
-      const sourceRight = source.position.x + NODE_WIDTH / 2 <= target.position.x + NODE_WIDTH / 2;
+      const sourceRight = tableCenter(source).x <= tableCenter(target).x;
       const sourceSide = sourceRight ? "right" : "left";
       const targetSide = sourceRight ? "left" : "right";
 
@@ -205,7 +205,10 @@ export function Canvas() {
           const target = event.target as HTMLElement;
           if (!target.classList.contains("react-flow__pane")) return;
           addTable(
-            screenToFlowPosition({ x: event.clientX - NODE_WIDTH / 2, y: event.clientY - 20 }),
+            screenToFlowPosition({
+              x: event.clientX - DEFAULT_TABLE_WIDTH / 2,
+              y: event.clientY - 20,
+            }),
           );
         }}
         zoomOnDoubleClick={false}

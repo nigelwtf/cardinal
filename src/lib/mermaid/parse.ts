@@ -144,6 +144,7 @@ export function reconcile(previous: Diagram, parsed: ParseResult): Diagram {
       accent: prev.accent,
       comment: prev.comment,
       position: prev.position,
+      width: prev.width,
       columns: table.columns.map((column) => {
         const prevColumn = prevColumns.get(column.name.toLowerCase());
         return prevColumn ? { ...column, id: prevColumn.id } : column;

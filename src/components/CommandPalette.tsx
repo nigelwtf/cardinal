@@ -22,7 +22,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { download } from "@/lib/download";
-import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { tableCenter } from "@/lib/layout";
 import { toMermaid } from "@/lib/mermaid/serialize";
 import { toSql } from "@/lib/sql/export";
 import { useDiagram } from "@/store/useDiagram";
@@ -112,14 +112,8 @@ export function CommandPalette({ open, onOpenChange, onOpenLibrary, onOpenImport
               value={`${table.name} ${table.columns.map((c) => c.name).join(" ")}`}
               onSelect={run(() => {
                 select({ kind: "table", id: table.id });
-                setCenter(
-                  table.position.x + NODE_WIDTH / 2,
-                  table.position.y + tableHeight(table) / 2,
-                  {
-                    zoom: 1,
-                    duration: 350,
-                  },
-                );
+                const { x, y } = tableCenter(table);
+                setCenter(x, y, { zoom: 1, duration: 350 });
               })}
             >
               <Table2 /> {table.name}

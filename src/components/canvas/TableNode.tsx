@@ -3,9 +3,10 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { ColumnKeyIcon } from "@/components/ColumnKeyIcon";
 import { cn } from "@/lib/utils";
 import { isEnumType } from "@/lib/enum";
-import { HEADER_HEIGHT, NODE_WIDTH, ROW_HEIGHT } from "@/lib/layout";
+import { HEADER_HEIGHT, ROW_HEIGHT, tableWidth } from "@/lib/layout";
 import type { Column, Table } from "@/lib/types";
 import { useDiagram } from "@/store/useDiagram";
+import { TableEdgeResizer } from "./TableEdgeResizer";
 
 export const TABLE_HANDLE = "__table";
 
@@ -118,9 +119,9 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
 
   return (
     <div
-      style={{ width: NODE_WIDTH, borderColor: selected ? undefined : table.accent }}
+      style={{ width: tableWidth(table), borderColor: selected ? undefined : table.accent }}
       className={cn(
-        "group/table rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
+        "group/table rounded-xl border bg-card text-card-foreground shadow-sm transition-[box-shadow,opacity,border-color]",
         "hover:shadow-md [&_.react-flow\\_\\_handle]:hover:opacity-100",
         selected ? "border-primary ring-2 ring-primary/30" : "",
         dimmed && "opacity-35",
@@ -193,6 +194,7 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
           );
         })}
       </div>
+      <TableEdgeResizer tableId={table.id} />
     </div>
   );
 }

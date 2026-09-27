@@ -23,6 +23,8 @@ export interface Table {
   comment?: string;
   accent: string;
   position: { x: number; y: number };
+  /** Set once the user resizes the table; absent means the default width. */
+  width?: number;
   columns: Column[];
 }
 

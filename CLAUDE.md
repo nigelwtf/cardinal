@@ -122,8 +122,8 @@ ever sees the canonical form.
 - Tailwind v4 utilities composed via `cn()` — re-exported from the `cn` package in
   `src/lib/utils.ts` (not the usual shadcn `clsx` + `tailwind-merge` pairing; import from
   `@/lib/utils` either way). Never string-concatenate class names.
-- Geometry constants with meaning beyond one component (`NODE_WIDTH`, `HEADER_HEIGHT`,
-  `ROW_HEIGHT`, `FOOTER_HEIGHT`, `tableHeight()` in `src/lib/layout.ts`) are imported, not re-typed
+- Geometry constants and helpers with meaning beyond one component (`HEADER_HEIGHT`, `ROW_HEIGHT`,
+  `FOOTER_HEIGHT`, `tableWidth()`, `tableHeight()`, `tableCenter()` in `src/lib/layout.ts`) are imported, not re-typed
   as magic numbers — dagre layout, the canvas node, and the Explorer's "focus this table" math all
   have to agree or nodes visibly drift.
 - Theming is `next-themes` with `attribute="class"` against the `:root` / `.dark` custom-property
