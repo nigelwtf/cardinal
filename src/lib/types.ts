@@ -8,6 +8,11 @@ export interface Point {
   y: number;
 }
 
+export interface Size {
+  width: number;
+  height: number;
+}
+
 export interface Column {
   id: string;
   name: string;
@@ -59,11 +64,27 @@ export interface Relationship {
   waypoints?: Point[];
 }
 
+/** A titled, tinted rectangle drawn behind the tables to group them visually. */
+export interface BoxShape {
+  id: string;
+  kind: "box";
+  position: Point;
+  size: Size;
+  title: string;
+  color: string;
+}
+
+/** Drawable canvas decoration. Never exported to Mermaid or SQL, which have no way to say it. */
+export type Shape = BoxShape;
+
+export type ShapeKind = Shape["kind"];
+
 export interface Diagram {
   id: string;
   name: string;
   tables: Table[];
   relationships: Relationship[];
+  shapes: Shape[];
   createdAt: number;
   updatedAt: number;
 }
@@ -82,6 +103,9 @@ export const ACCENTS = [
   "#8b5cf6",
   "#14b8a6",
 ] as const;
+
+/** Section presets: a neutral slate first, then the table accents so groups can match their tables. */
+export const SHAPE_COLORS = ["#64748b", ...ACCENTS] as const;
 
 export const COMMON_TYPES = [
   "uuid",

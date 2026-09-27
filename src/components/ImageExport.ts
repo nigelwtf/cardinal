@@ -4,6 +4,9 @@ import { download } from "@/lib/download";
 
 const PADDING = 48;
 
+// Minimap and controls are chrome; resize handles only appear because a box is selected.
+const EXCLUDED = ["react-flow__minimap", "react-flow__controls", "react-flow__resize-control"];
+
 interface Options {
   nodes: Node[];
   filename: string;
@@ -30,9 +33,7 @@ async function render(format: "png" | "svg", { nodes, filename, dark }: Options)
       height: `${height}px`,
       transform: `translate(${offsetX}px, ${offsetY}px) scale(1)`,
     },
-    filter: (node: HTMLElement) =>
-      !node.classList?.contains?.("react-flow__minimap") &&
-      !node.classList?.contains?.("react-flow__controls"),
+    filter: (node: HTMLElement) => !EXCLUDED.some((name) => node.classList?.contains?.(name)),
   };
 
   const dataUrl = format === "png" ? await toPng(viewport, config) : await toSvg(viewport, config);

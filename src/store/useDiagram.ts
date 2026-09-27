@@ -6,15 +6,17 @@ import { parseMermaid, reconcile, type ParseResult } from "@/lib/mermaid/parse";
 import { emptyDiagram } from "@/lib/sample";
 import type { Column, Diagram, Relationship, Table } from "@/lib/types";
 import { ACCENTS } from "@/lib/types";
+import { createShapeSlice, type ShapeSlice } from "./shapeSlice";
 
 export type Selection =
   | { kind: "table"; id: string }
   | { kind: "relationship"; id: string }
+  | { kind: "shape"; id: string }
   | { kind: "none" };
 
 const HISTORY_LIMIT = 100;
 
-interface DiagramState {
+export interface DiagramState extends ShapeSlice {
   diagram: Diagram;
   past: Diagram[];
   future: Diagram[];
@@ -25,8 +27,14 @@ interface DiagramState {
   expandedEnumColumns: Set<string>;
 
   apply: (fn: (draft: Diagram) => Diagram, options?: { commit?: boolean }) => void;
-  /** Push an explicit snapshot onto the undo stack (used for drag gestures). */
+  /** Push an explicit snapshot onto the undo stack. */
   commitSnapshot: (snapshot: Diagram) => void;
+  /** The document as it was when the current drag or resize began. */
+  gestureOrigin: Diagram | null;
+  /** Remember the document before a gesture that streams `{ commit: false }` updates. */
+  beginGesture: () => void;
+  /** Close the gesture with a single undo entry for everything it changed. */
+  endGesture: () => void;
   undo: () => void;
   redo: () => void;
   markSaved: () => void;
@@ -76,7 +84,9 @@ export const newColumn = (partial: Partial<Column> = {}): Column => ({
   comment: partial.comment,
 });
 
-export const useDiagram = create<DiagramState>((set, get) => ({
+export const useDiagram = create<DiagramState>((set, get, store) => ({
+  ...createShapeSlice(set, get, store),
+
   diagram: emptyDiagram(),
   past: [],
   future: [],
@@ -102,6 +112,16 @@ export const useDiagram = create<DiagramState>((set, get) => ({
     const { past, diagram } = get();
     if (snapshot === diagram) return;
     set({ past: [...past, snapshot].slice(-HISTORY_LIMIT), future: [] });
+  },
+
+  gestureOrigin: null,
+
+  beginGesture: () => set({ gestureOrigin: get().diagram }),
+
+  endGesture: () => {
+    const { gestureOrigin, commitSnapshot } = get();
+    if (gestureOrigin) commitSnapshot(gestureOrigin);
+    set({ gestureOrigin: null });
   },
 
   undo: () => {
@@ -148,6 +168,9 @@ export const useDiagram = create<DiagramState>((set, get) => ({
       future: [],
       selection: { kind: "none" },
       parseErrors: [],
+      tool: "select",
+      editingShapeId: null,
+      gestureOrigin: null,
       dirty: true,
     }),
 

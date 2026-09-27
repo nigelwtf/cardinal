@@ -167,9 +167,9 @@ pnpm preview     # serve the production build
 
 Run `typecheck` and `lint` before calling any change done. `typecheck` is clean and must stay
 clean. `.oxlintrc.json` enables exactly two rules: `react/rules-of-hooks` (error — zero, keep it
-there) and `react/only-export-components` (warn). That second rule currently has six known
-warnings, all from files that export a helper alongside a component (`TableNode.tsx`'s `handleId` /
-`columnFromHandle`, `CrowFootMarkers.tsx`, and the `cva` variants in `ui/badge`, `ui/button`,
-`ui/tabs`). Don't add a seventh: put shared helpers in a sibling module (`canvas/edgePath.ts` is
-the pattern) instead of exporting them from a component file. Retiring the existing six is a
-welcome side effect of the §1 file splits.
+there) and `react/only-export-components` (warn). That second rule currently has four known
+warnings, all from files that export a helper alongside a component (`CrowFootMarkers.tsx`, and
+the `cva` variants in `ui/badge`, `ui/button`, `ui/tabs`). Don't add a fifth: put shared helpers in
+a sibling module (`canvas/edgePath.ts` and `canvas/handles.ts` are the pattern) instead of
+exporting them from a component file. Retiring the existing four is a welcome side effect of the
+§1 file splits.

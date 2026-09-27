@@ -97,6 +97,7 @@ export function sampleDiagram(): Diagram {
       link(delivery, parcel, "carries", "one", "one-or-more", "id", "delivery_id"),
       link(delivery, invoice, "billed by", "one", "zero-or-one", "id", "delivery_id"),
     ],
+    shapes: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -109,6 +110,7 @@ export const emptyDiagram = (name = "Untitled schema"): Diagram => ({
   name,
   tables: [],
   relationships: [],
+  shapes: [],
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });

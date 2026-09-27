@@ -57,7 +57,8 @@ function RelationshipEdgeInner({
   data,
 }: EdgeProps & { data?: RelationshipEdgeData }) {
   const setWaypoints = useDiagram((s) => s.setWaypoints);
-  const commitSnapshot = useDiagram((s) => s.commitSnapshot);
+  const beginGesture = useDiagram((s) => s.beginGesture);
+  const endGesture = useDiagram((s) => s.endGesture);
   const { screenToFlowPosition } = useReactFlow();
 
   const [hovered, setHovered] = useState(false);
@@ -118,7 +119,7 @@ function RelationshipEdgeInner({
     event.preventDefault();
     releaseGesture.current?.();
 
-    const snapshot = useDiagram.getState().diagram;
+    beginGesture();
     const origin = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     const startPoints = insert
       ? [
@@ -155,7 +156,7 @@ function RelationshipEdgeInner({
       releaseGesture.current = null;
       setDragging(false);
       // One undo entry per gesture, matching how node drags behave.
-      commitSnapshot(snapshot);
+      endGesture();
     };
 
     releaseGesture.current = finish;
