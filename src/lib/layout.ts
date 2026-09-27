@@ -1,9 +1,7 @@
 import dagre from "@dagrejs/dagre";
-import type { Diagram, Point, Table } from "@/lib/types";
+import type { Diagram, Point, Table, TableSize } from "@/lib/types";
 
-export const DEFAULT_TABLE_WIDTH = 268;
-export const MIN_TABLE_WIDTH = 200;
-export const MAX_TABLE_WIDTH = 640;
+export const TABLE_WIDTHS: Record<TableSize, number> = { sm: 220, md: 268, lg: 400 };
 export const HEADER_HEIGHT = 44;
 export const ROW_HEIGHT = 28;
 export const FOOTER_HEIGHT = 8;
@@ -11,7 +9,11 @@ export const FOOTER_HEIGHT = 8;
 export const tableHeight = (table: Table) =>
   HEADER_HEIGHT + Math.max(table.columns.length, 1) * ROW_HEIGHT + FOOTER_HEIGHT;
 
-export const tableWidth = (table: Table) => table.width ?? DEFAULT_TABLE_WIDTH;
+export const DEFAULT_TABLE_SIZE: TableSize = "md";
+
+export const tableSize = (table: Table) => table.size ?? DEFAULT_TABLE_SIZE;
+
+export const tableWidth = (table: Table) => TABLE_WIDTHS[tableSize(table)];
 
 export const tableCenter = (table: Table): Point => ({
   x: table.position.x + tableWidth(table) / 2,

@@ -16,7 +16,13 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useDiagram } from "@/store/useDiagram";
-import { DEFAULT_TABLE_WIDTH, tableCenter, tableHeight, tableWidth } from "@/lib/layout";
+import {
+  DEFAULT_TABLE_SIZE,
+  TABLE_WIDTHS,
+  tableCenter,
+  tableHeight,
+  tableWidth,
+} from "@/lib/layout";
 import { CrowFootMarkers } from "./CrowFootMarkers";
 import { RelationshipEdge, type RelationshipEdgeData } from "./RelationshipEdge";
 import {
@@ -206,7 +212,7 @@ export function Canvas() {
           if (!target.classList.contains("react-flow__pane")) return;
           addTable(
             screenToFlowPosition({
-              x: event.clientX - DEFAULT_TABLE_WIDTH / 2,
+              x: event.clientX - TABLE_WIDTHS[DEFAULT_TABLE_SIZE] / 2,
               y: event.clientY - 20,
             }),
           );

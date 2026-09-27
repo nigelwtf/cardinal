@@ -42,8 +42,6 @@ interface DiagramState {
   removeTable: (id: string) => void;
   duplicateTable: (id: string) => void;
   moveTable: (id: string, position: { x: number; y: number }, commit?: boolean) => void;
-  /** Dragging the left edge moves the table as well, so `x` travels with `width`. */
-  resizeTable: (id: string, frame: { x: number; width: number }, commit?: boolean) => void;
 
   addColumn: (tableId: string, partial?: Partial<Column>) => void;
   updateColumn: (tableId: string, columnId: string, patch: Partial<Column>) => void;
@@ -202,17 +200,6 @@ export const useDiagram = create<DiagramState>((set, get) => ({
 
   moveTable: (id, position, commit = true) =>
     get().apply((d) => mapTable(d, id, (t) => ({ ...t, position })), { commit }),
-
-  resizeTable: (id, { x, width }, commit = true) =>
-    get().apply(
-      (d) =>
-        mapTable(d, id, (t) => ({
-          ...t,
-          width: Math.round(width),
-          position: { ...t.position, x },
-        })),
-      { commit },
-    ),
 
   addColumn: (tableId, partial) =>
     get().apply((d) =>

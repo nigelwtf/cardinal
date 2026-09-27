@@ -17,9 +17,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatEnumType, isEnumType, parseEnumValues } from "@/lib/enum";
+import { tableSize } from "@/lib/layout";
 import { CARDINALITY_LABEL } from "@/lib/mermaid/tokens";
 import { ACCENTS, COMMON_TYPES, type Cardinality, type Column } from "@/lib/types";
 import { useDiagram, type Selection } from "@/store/useDiagram";
+import { TableSizePicker } from "./TableSizePicker";
 
 const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"];
 
@@ -275,6 +277,14 @@ function TableInspector({ id }: { id: string }) {
             />
           ))}
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Size</Label>
+        <TableSizePicker
+          value={tableSize(table)}
+          onChange={(size) => updateTable(table.id, { size })}
+        />
       </div>
 
       <Separator />

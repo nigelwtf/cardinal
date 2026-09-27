@@ -23,8 +23,8 @@ export interface Table {
   comment?: string;
   accent: string;
   position: { x: number; y: number };
-  /** Set once the user resizes the table; absent means the default width. */
-  width?: number;
+  /** Absent means `DEFAULT_TABLE_SIZE`. */
+  size?: TableSize;
   columns: Column[];
 }
 
@@ -57,6 +57,10 @@ export interface Diagram {
   createdAt: number;
   updatedAt: number;
 }
+
+export const TABLE_SIZES = ["sm", "md", "lg"] as const;
+
+export type TableSize = (typeof TABLE_SIZES)[number];
 
 export const ACCENTS = [
   "#6366f1",
