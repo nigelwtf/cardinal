@@ -1,10 +1,10 @@
-import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { tableHeight, tableWidth } from "@/lib/layout";
 import type { Diagram, Point, Shape, Table } from "@/lib/types";
 import { rectContains, type Rect } from "./rect";
 
 const tableRect = (table: Table): Rect => ({
   ...table.position,
-  width: NODE_WIDTH,
+  width: tableWidth(table),
   height: tableHeight(table),
 });
 

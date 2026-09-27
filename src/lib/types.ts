@@ -1,5 +1,8 @@
 export type Cardinality = "one" | "zero-or-one" | "one-or-more" | "zero-or-more";
 
+/** Which edge of a table (or, for a column anchor, which edge of its row) a connection exits from. */
+export type AnchorSide = "left" | "right" | "top" | "bottom";
+
 export interface Point {
   x: number;
   y: number;
@@ -28,6 +31,8 @@ export interface Table {
   comment?: string;
   accent: string;
   position: { x: number; y: number };
+  /** Absent means `DEFAULT_TABLE_SIZE`. */
+  size?: TableSize;
   columns: Column[];
 }
 
@@ -41,6 +46,13 @@ export interface Relationship {
   sourceCardinality: Cardinality;
   /** cardinality at the target (right) end */
   targetCardinality: Cardinality;
+  /**
+   * Manually pinned exit side per end. Unset falls back to the side that's automatically
+   * picked from the tables' relative positions (recomputed live, so it can flip as tables move).
+   * Top/bottom are only meaningful when that end is anchored to the whole table, not a column.
+   */
+  sourceSide?: AnchorSide;
+  targetSide?: AnchorSide;
   /** mermaid `--` (identifying) vs `..` (non-identifying) */
   identifying: boolean;
   label: string;
@@ -76,6 +88,10 @@ export interface Diagram {
   createdAt: number;
   updatedAt: number;
 }
+
+export const TABLE_SIZES = ["sm", "md", "lg"] as const;
+
+export type TableSize = (typeof TABLE_SIZES)[number];
 
 export const ACCENTS = [
   "#6366f1",

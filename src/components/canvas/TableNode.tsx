@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 import type { NodeProps } from "@xyflow/react";
-import { NODE_WIDTH, ROW_HEIGHT } from "@/lib/layout";
+import { ROW_HEIGHT, tableWidth } from "@/lib/layout";
 import type { Table } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useDiagram } from "@/store/useDiagram";
@@ -23,9 +23,10 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
 
   return (
     <div
-      style={{ width: NODE_WIDTH, borderColor: selected ? undefined : table.accent }}
+      style={{ width: tableWidth(table), borderColor: selected ? undefined : table.accent }}
       className={cn(
-        "group/table rounded-xl border bg-card text-card-foreground shadow-sm transition-all",
+        // Width must not animate: React Flow measures handle positions once per size change.
+        "group/table rounded-xl border bg-card text-card-foreground shadow-sm transition-[box-shadow,opacity,border-color]",
         "hover:shadow-md [&_.react-flow\\_\\_handle]:hover:opacity-100",
         selected ? "border-primary ring-2 ring-primary/30" : "",
         dimmed && "opacity-35",

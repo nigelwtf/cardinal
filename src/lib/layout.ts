@@ -1,13 +1,24 @@
 import dagre from "@dagrejs/dagre";
-import type { Diagram, Table } from "@/lib/types";
+import type { Diagram, Point, Table, TableSize } from "@/lib/types";
 
-export const NODE_WIDTH = 268;
+export const TABLE_WIDTHS: Record<TableSize, number> = { sm: 220, md: 268, lg: 400 };
 export const HEADER_HEIGHT = 44;
 export const ROW_HEIGHT = 28;
 export const FOOTER_HEIGHT = 8;
 
 export const tableHeight = (table: Table) =>
   HEADER_HEIGHT + Math.max(table.columns.length, 1) * ROW_HEIGHT + FOOTER_HEIGHT;
+
+export const DEFAULT_TABLE_SIZE: TableSize = "md";
+
+export const tableSize = (table: Table) => table.size ?? DEFAULT_TABLE_SIZE;
+
+export const tableWidth = (table: Table) => TABLE_WIDTHS[tableSize(table)];
+
+export const tableCenter = (table: Table): Point => ({
+  x: table.position.x + tableWidth(table) / 2,
+  y: table.position.y + tableHeight(table) / 2,
+});
 
 export type LayoutDirection = "LR" | "TB";
 
@@ -23,7 +34,7 @@ export function autoLayout(diagram: Diagram, direction: LayoutDirection = "LR"):
   });
 
   for (const table of diagram.tables) {
-    graph.setNode(table.id, { width: NODE_WIDTH, height: tableHeight(table) });
+    graph.setNode(table.id, { width: tableWidth(table), height: tableHeight(table) });
   }
   for (const rel of diagram.relationships) {
     if (graph.hasNode(rel.sourceTableId) && graph.hasNode(rel.targetTableId)) {
@@ -43,7 +54,7 @@ export function autoLayout(diagram: Diagram, direction: LayoutDirection = "LR"):
       return {
         ...table,
         position: {
-          x: Math.round(node.x - NODE_WIDTH / 2),
+          x: Math.round(node.x - tableWidth(table) / 2),
           y: Math.round(node.y - tableHeight(table) / 2),
         },
       };
@@ -57,7 +68,7 @@ export function placeNewTables(diagram: Diagram): Diagram {
   const unplaced = diagram.tables.filter((t) => t.position.x === 0 && t.position.y === 0);
   if (unplaced.length === 0 || unplaced.length === diagram.tables.length) return diagram;
 
-  const maxX = Math.max(...diagram.tables.map((t) => t.position.x + NODE_WIDTH));
+  const maxX = Math.max(...diagram.tables.map((t) => t.position.x + tableWidth(t)));
   return {
     ...diagram,
     tables: diagram.tables.map((table) => {

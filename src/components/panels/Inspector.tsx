@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Copy, Plus, Spline, Trash2, X } from "lucide-react"
 import type { ReactNode } from "react";
 import { SwatchPicker } from "@/components/SwatchPicker";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,13 +19,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatEnumType, isEnumType, parseEnumValues } from "@/lib/enum";
+import { tableSize } from "@/lib/layout";
 import { CARDINALITY_LABEL } from "@/lib/mermaid/tokens";
-import { ACCENTS, COMMON_TYPES, type Cardinality, type Column } from "@/lib/types";
+import { ACCENTS, COMMON_TYPES, type AnchorSide, type Cardinality, type Column } from "@/lib/types";
 import { useDiagram, type Selection } from "@/store/useDiagram";
 import { TOOLS, shapeLabel } from "@/components/canvas/tools";
 import { ShapeInspector } from "./inspector/ShapeInspector";
+import { TableSizePicker } from "./TableSizePicker";
 
 const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"];
+const ANCHOR_SIDES: AnchorSide[] = ["left", "right", "top", "bottom"];
+const ANCHOR_SIDE_LABEL: Record<AnchorSide, string> = {
+  left: "Left",
+  right: "Right",
+  top: "Top",
+  bottom: "Bottom",
+};
 
 function Flag({
   active,
@@ -145,16 +155,16 @@ function ColumnRow({
           className="h-7 flex-1 text-xs"
           placeholder="column_name"
         />
-        <Input
+        <Combobox
           value={column.type}
-          list="cardinal-types"
-          onChange={(e) => updateColumn(tableId, column.id, { type: e.target.value })}
+          onChange={(next) => updateColumn(tableId, column.id, { type: next })}
           onBlur={(e) => {
             if (e.target.value.trim().toLowerCase() === "enum") {
               updateColumn(tableId, column.id, { type: formatEnumType([]) });
             }
           }}
-          className="h-7 w-24 font-mono text-[11px]"
+          options={COMMON_TYPES}
+          className="w-24"
           placeholder="type"
         />
       </div>
@@ -271,6 +281,14 @@ function TableInspector({ id }: { id: string }) {
         />
       </div>
 
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Size</Label>
+        <TableSizePicker
+          value={tableSize(table)}
+          onChange={(size) => updateTable(table.id, { size })}
+        />
+      </div>
+
       <Separator />
 
       <div className="flex items-center justify-between">
@@ -336,13 +354,17 @@ function RelationshipInspector({ id }: { id: string }) {
     const tableKey = side === "source" ? "sourceTableId" : "targetTableId";
     const columnKey = side === "source" ? "sourceColumnId" : "targetColumnId";
     const cardinalityKey = side === "source" ? "sourceCardinality" : "targetCardinality";
+    const anchorSideKey = side === "source" ? "sourceSide" : "targetSide";
+    const wholeTable = !relationship[columnKey];
 
     return (
       <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2">
         <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{side}</Label>
         <Select
           value={relationship[tableKey]}
-          onValueChange={(value) => update(id, { [tableKey]: value, [columnKey]: undefined })}
+          onValueChange={(value) =>
+            update(id, { [tableKey]: value, [columnKey]: undefined, [anchorSideKey]: undefined })
+          }
         >
           <SelectTrigger className="h-7 w-full text-xs">
             <SelectValue />
@@ -358,7 +380,11 @@ function RelationshipInspector({ id }: { id: string }) {
         <Select
           value={relationship[columnKey] ?? "__none"}
           onValueChange={(value) =>
-            update(id, { [columnKey]: value === "__none" ? undefined : value })
+            update(id, {
+              [columnKey]: value === "__none" ? undefined : value,
+              // A pinned top/bottom side only makes sense for a whole-table anchor.
+              [anchorSideKey]: undefined,
+            })
           }
         >
           <SelectTrigger className="h-7 w-full text-xs">
@@ -386,6 +412,26 @@ function RelationshipInspector({ id }: { id: string }) {
             {CARDINALITIES.map((c) => (
               <SelectItem key={c} value={c} className="text-xs">
                 {CARDINALITY_LABEL[c]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={relationship[anchorSideKey] ?? "__auto"}
+          onValueChange={(value) =>
+            update(id, { [anchorSideKey]: value === "__auto" ? undefined : (value as AnchorSide) })
+          }
+        >
+          <SelectTrigger className="h-7 w-full text-xs">
+            <SelectValue placeholder="Anchor side" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__auto" className="text-xs">
+              Auto
+            </SelectItem>
+            {ANCHOR_SIDES.filter((s) => wholeTable || s === "left" || s === "right").map((s) => (
+              <SelectItem key={s} value={s} className="text-xs">
+                {ANCHOR_SIDE_LABEL[s]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -532,11 +578,6 @@ export function Inspector() {
 
   return (
     <div className="flex h-full flex-col bg-card">
-      <datalist id="cardinal-types">
-        {COMMON_TYPES.map((type) => (
-          <option key={type} value={type} />
-        ))}
-      </datalist>
       <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {shapeKind ? shapeLabel(shapeKind) : SELECTION_LABEL[selection.kind]}
       </div>

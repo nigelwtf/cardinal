@@ -1,7 +1,7 @@
 import { HEADER_HEIGHT } from "@/lib/layout";
 import { cn } from "@/lib/utils";
 import { InlineTitleInput } from "../InlineTitleInput";
-import { TABLE_HANDLE } from "../tableHandles";
+import { TABLE_HANDLE, TABLE_SIDES } from "../handles";
 import { ColumnHandles } from "./ColumnHandles";
 
 /** A table node's tinted header: its name and column count. Double-click the name to rename. */
@@ -55,7 +55,7 @@ export function TableHeader({
       <span className="ml-auto shrink-0 text-[11px] tabular-nums text-muted-foreground">
         {columnCount}
       </span>
-      <ColumnHandles id={TABLE_HANDLE} />
+      <ColumnHandles id={TABLE_HANDLE} sides={TABLE_SIDES} />
     </div>
   );
 }
