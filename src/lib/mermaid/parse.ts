@@ -172,6 +172,8 @@ export function reconcile(previous: Diagram, parsed: ParseResult): Diagram {
       id: prev?.id ?? rel.id,
       sourceColumnId: prev?.sourceColumnId,
       targetColumnId: prev?.targetColumnId,
+      sourceSide: prev?.sourceSide,
+      targetSide: prev?.targetSide,
       waypoints: prev?.waypoints,
     };
   });

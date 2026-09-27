@@ -17,15 +17,11 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useDiagram } from "@/store/useDiagram";
 import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import type { AnchorSide } from "@/lib/types";
 import { CrowFootMarkers } from "./CrowFootMarkers";
+import { TABLE_HANDLE, columnFromHandle, handleId, sideFromHandle } from "./handles";
 import { RelationshipEdge, type RelationshipEdgeData } from "./RelationshipEdge";
-import {
-  TABLE_HANDLE,
-  TableNode,
-  columnFromHandle,
-  handleId,
-  type TableNodeData,
-} from "./TableNode";
+import { TableNode, type TableNodeData } from "./TableNode";
 
 const nodeTypes = { table: TableNode };
 const edgeTypes = { relationship: RelationshipEdge };
@@ -91,11 +87,24 @@ export function Canvas() {
       if (!source || !target) return [];
 
       const sourceRight = source.position.x + NODE_WIDTH / 2 <= target.position.x + NODE_WIDTH / 2;
-      const sourceSide = sourceRight ? "right" : "left";
-      const targetSide = sourceRight ? "left" : "right";
+      const autoSourceSide: AnchorSide = sourceRight ? "right" : "left";
+      const autoTargetSide: AnchorSide = sourceRight ? "left" : "right";
 
       const anchor = (table: typeof source, columnId?: string) =>
         columnId && table.columns.some((c) => c.id === columnId) ? columnId : TABLE_HANDLE;
+
+      // A pinned top/bottom side only makes sense anchored to the whole table — a column's
+      // own row has no top/bottom edge of its own — so fall back to auto for that combination.
+      const resolveSide = (
+        pinned: AnchorSide | undefined,
+        auto: AnchorSide,
+        wholeTable: boolean,
+      ) => (pinned && (wholeTable || pinned === "left" || pinned === "right") ? pinned : auto);
+
+      const sourceAnchor = anchor(source, rel.sourceColumnId);
+      const targetAnchor = anchor(target, rel.targetColumnId);
+      const sourceSide = resolveSide(rel.sourceSide, autoSourceSide, sourceAnchor === TABLE_HANDLE);
+      const targetSide = resolveSide(rel.targetSide, autoTargetSide, targetAnchor === TABLE_HANDLE);
 
       return [
         {
@@ -103,8 +112,8 @@ export function Canvas() {
           type: "relationship",
           source: rel.sourceTableId,
           target: rel.targetTableId,
-          sourceHandle: handleId(anchor(source, rel.sourceColumnId), "source", sourceSide),
-          targetHandle: handleId(anchor(target, rel.targetColumnId), "target", targetSide),
+          sourceHandle: handleId(sourceAnchor, "source", sourceSide),
+          targetHandle: handleId(targetAnchor, "target", targetSide),
           selected: selection.kind === "relationship" && selection.id === rel.id,
           reconnectable: true,
           data: {
@@ -148,6 +157,10 @@ export function Canvas() {
         targetTableId: connection.target,
         sourceColumnId,
         targetColumnId,
+        // Pin whichever side the connection was actually dropped on, rather than letting it
+        // auto-flip as the tables move — that auto-flip is still what happens when unset.
+        sourceSide: sideFromHandle(connection.sourceHandle),
+        targetSide: sideFromHandle(connection.targetHandle),
         sourceCardinality: "one",
         targetCardinality: "zero-or-more",
         identifying: true,
@@ -171,6 +184,8 @@ export function Canvas() {
         targetTableId: connection.target,
         sourceColumnId: columnFromHandle(connection.sourceHandle),
         targetColumnId,
+        sourceSide: sideFromHandle(connection.sourceHandle),
+        targetSide: sideFromHandle(connection.targetHandle),
       });
       if (targetColumnId) updateColumn(connection.target, targetColumnId, { fk: true });
     },
