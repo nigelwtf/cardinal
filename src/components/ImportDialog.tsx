@@ -59,6 +59,7 @@ export function ImportDialog({
             name: parsed.name ?? "Imported schema",
             tables: parsed.tables,
             relationships: parsed.relationships ?? [],
+            shapes: parsed.shapes,
             createdAt: parsed.createdAt ?? Date.now(),
             updatedAt: Date.now(),
           }),
@@ -70,6 +71,7 @@ export function ImportDialog({
       const base = {
         id: newId("dgm"),
         name: tab === "sql" ? "Imported from SQL" : "Imported from Mermaid",
+        shapes: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };

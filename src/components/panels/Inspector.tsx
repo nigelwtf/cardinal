@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, Copy, Plus, Spline, Trash2, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { SwatchPicker } from "@/components/SwatchPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,8 @@ import { formatEnumType, isEnumType, parseEnumValues } from "@/lib/enum";
 import { CARDINALITY_LABEL } from "@/lib/mermaid/tokens";
 import { ACCENTS, COMMON_TYPES, type Cardinality, type Column } from "@/lib/types";
 import { useDiagram, type Selection } from "@/store/useDiagram";
+import { TOOLS } from "@/components/canvas/tools";
+import { ShapeInspector } from "./inspector/ShapeInspector";
 
 const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"];
 
@@ -260,21 +263,12 @@ function TableInspector({ id }: { id: string }) {
 
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">Accent</Label>
-        <div className="flex flex-wrap gap-1.5">
-          {ACCENTS.map((accent) => (
-            <button
-              key={accent}
-              type="button"
-              aria-label={`Accent ${accent}`}
-              onClick={() => updateTable(table.id, { accent })}
-              style={{ background: accent }}
-              className={cn(
-                "size-5 rounded-full ring-offset-2 ring-offset-background transition-all",
-                table.accent === accent ? "ring-2 ring-foreground" : "hover:scale-110",
-              )}
-            />
-          ))}
-        </div>
+        <SwatchPicker
+          colors={ACCENTS}
+          value={table.accent}
+          onChange={(accent) => updateTable(table.id, { accent })}
+          label="Accent"
+        />
       </div>
 
       <Separator />
@@ -477,6 +471,7 @@ function DiagramInspector() {
           ["⌘K", "Command palette"],
           ["N", "New table"],
           ["L", "Auto layout"],
+          ...TOOLS.map((tool) => [tool.key.toUpperCase(), `${tool.label} tool`]),
           ["⌘Z / ⇧⌘Z", "Undo / redo"],
           ["Double-click", "New table on canvas"],
           ["Drag a column edge", "Create a relationship"],
@@ -485,6 +480,7 @@ function DiagramInspector() {
           ["Double-click a dot", "Remove a bend"],
           ["⌥ while dragging", "Bend off-grid"],
           ["Drag a line end", "Re-point a relationship"],
+          ["Double-click a title", "Rename a box"],
         ].map(([keys, description]) => (
           <div key={keys} className="flex items-center justify-between gap-3">
             <span>{description}</span>
@@ -501,6 +497,7 @@ function DiagramInspector() {
 const SELECTION_LABEL: Record<Selection["kind"], string> = {
   table: "Table",
   relationship: "Relationship",
+  shape: "Shape",
   none: "Schema",
 };
 
@@ -515,8 +512,16 @@ export function Inspector() {
     case "relationship":
       panel = <RelationshipInspector id={selection.id} />;
       break;
-    default:
+    case "shape":
+      panel = <ShapeInspector id={selection.id} />;
+      break;
+    case "none":
       panel = <DiagramInspector />;
+      break;
+    default: {
+      const _exhaustive: never = selection;
+      panel = _exhaustive;
+    }
   }
 
   return (

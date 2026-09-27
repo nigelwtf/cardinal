@@ -1,5 +1,5 @@
 import { createStore, del, get, keys, set } from "idb-keyval";
-import { normalizeDiagram } from "@/lib/normalize";
+import { normalizeDiagram, type StoredDiagram } from "@/lib/normalize";
 import type { Diagram } from "@/lib/types";
 
 const store = createStore("cardinal", "diagrams");
@@ -14,7 +14,7 @@ export interface DiagramSummary {
 
 export const saveDiagram = (diagram: Diagram) => set(diagram.id, diagram, store);
 export const loadDiagram = async (id: string) => {
-  const diagram = await get<Diagram>(id, store);
+  const diagram = await get<StoredDiagram>(id, store);
   return diagram ? normalizeDiagram(diagram) : undefined;
 };
 export const deleteDiagram = (id: string) => del(id, store);

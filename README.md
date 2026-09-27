@@ -28,6 +28,9 @@ whiteboard product, and doesn't cost a seat licence. Local-first, keyboard-drive
   positions, colours and the bits Mermaid can't express (nullability, defaults) intact.
 - **Import** Mermaid, SQL DDL (`CREATE TABLE`, inline + `ALTER TABLE` foreign keys), or a Cardinal JSON document.
 - **Export** Mermaid, PostgreSQL / MySQL / SQLite DDL, PNG, SVG, JSON.
+- **Boxes for grouping** — pick the box tool (`B`) and drag on the canvas to draw a tinted, titled
+  frame behind your tables. Nine colour presets, resizable, and saved with the document. Boxes
+  are decoration only: they stay out of Mermaid and SQL, and moving one never moves the tables on it.
 - **Auto layout** via dagre, left-to-right or top-to-bottom.
 - **Command palette** (`⌘K`) for jumping to tables and running actions.
 - **Local-first storage** — every diagram lives in IndexedDB. No account, no server, no network calls.
@@ -49,6 +52,7 @@ pnpm dev
 | `⌘K` | Command palette |
 | `N` | New table |
 | `L` | Auto layout |
+| `V` / `B` | Select tool / box tool |
 | `⌘Z` / `⇧⌘Z` | Undo / redo |
 | `Double-click canvas` | New table at the cursor |
 | `Backspace` | Delete selection |
@@ -56,21 +60,25 @@ pnpm dev
 | `Double-click a dot` | Remove that bend |
 | `⌥` while dragging | Bend off-grid |
 | `Drag a line end` | Re-point the relationship |
+| `Double-click a box title` | Rename the box |
 
 ## How it's put together
 
 ```
 src/
   lib/
-    types.ts          core model: Table, Column, Relationship, Diagram
+    types.ts          core model: Table, Column, Relationship, Shape, Diagram
+    shapes/           per-kind shape definitions and rectangle geometry
     mermaid/          tokens, serializer, parser + reconciler
     sql/              DDL export (3 dialects) and DDL import
     layout.ts         dagre auto layout + node sizing
     normalize.ts      forward-migration for documents saved by older builds
     persistence.ts    IndexedDB document store
   store/useDiagram.ts zustand store with snapshot undo/redo
+  store/shapeSlice.ts drawing tool and shape actions
   components/
-    canvas/           React Flow node, edge, orthogonal router, crow's-foot markers
+    canvas/           React Flow nodes, edge, orthogonal router, crow's-foot markers, tool rail
+    canvas/shapes/    one folder of leaves per drawable kind
     panels/           explorer, inspector, code panel
 ```
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { ThemeProvider } from "next-themes";
 import { Canvas } from "@/components/canvas/Canvas";
+import { TOOLS } from "@/components/canvas/tools";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ImportDialog } from "@/components/ImportDialog";
 import { LibraryDialog } from "@/components/LibraryDialog";
@@ -27,6 +28,7 @@ function Workspace() {
   const undo = useDiagram((s) => s.undo);
   const redo = useDiagram((s) => s.redo);
   const select = useDiagram((s) => s.select);
+  const setTool = useDiagram((s) => s.setTool);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -65,14 +67,22 @@ function Workspace() {
       { key: "z", mod: true, shift: true, run: () => redo() },
       { key: "n", run: () => addTable() },
       { key: "l", run: () => layout("LR") },
-      { key: "Escape", preventDefault: false, run: () => select({ kind: "none" }) },
+      ...TOOLS.map((tool): KeyBinding => ({ key: tool.key, run: () => setTool(tool.id) })),
+      {
+        key: "Escape",
+        preventDefault: false,
+        run: () => {
+          setTool("select");
+          select({ kind: "none" });
+        },
+      },
       { key: "=", mod: true, run: () => zoomIn() },
       { key: "+", mod: true, run: () => zoomIn() },
       { key: "+", mod: true, shift: true, run: () => zoomIn() },
       { key: "-", mod: true, run: () => zoomOut() },
       { key: "0", mod: true, run: () => zoomTo(1, { duration: 200 }) },
     ],
-    [addTable, layout, redo, select, undo, zoomIn, zoomOut, zoomTo],
+    [addTable, layout, redo, select, setTool, undo, zoomIn, zoomOut, zoomTo],
   );
 
   useEffect(() => {
