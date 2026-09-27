@@ -481,6 +481,7 @@ function DiagramInspector() {
           ["⌥ while dragging", "Bend off-grid"],
           ["Drag a line end", "Re-point a relationship"],
           ["Double-click a title", "Rename a section"],
+          ["Double-click a name", "Rename a table"],
         ].map(([keys, description]) => (
           <div key={keys} className="flex items-center justify-between gap-3">
             <span>{description}</span>
