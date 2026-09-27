@@ -88,7 +88,7 @@ export const ACCENTS = [
   "#14b8a6",
 ] as const;
 
-/** Box presets: a neutral slate first, then the table accents so groups can match their tables. */
+/** Section presets: a neutral slate first, then the table accents so groups can match their tables. */
 export const SHAPE_COLORS = ["#64748b", ...ACCENTS] as const;
 
 export const COMMON_TYPES = [

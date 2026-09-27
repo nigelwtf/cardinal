@@ -32,13 +32,13 @@ export function BoxInspector({
           colors={SHAPE_COLORS}
           value={box.color}
           onChange={(color) => onChange({ color })}
-          label="Box colour"
+          label="Section colour"
         />
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Boxes sit behind your tables and are saved with the document, but aren't part of the Mermaid
-        or SQL output.
+        Tables fully inside a section move with it. Deleting the section leaves them where they are.
+        Sections save with the document but aren't part of the Mermaid or SQL output.
       </p>
 
       <Button
@@ -47,7 +47,7 @@ export function BoxInspector({
         className="w-full gap-1.5 text-destructive hover:text-destructive"
         onClick={onDelete}
       >
-        <Trash2 className="size-3.5" /> Delete box
+        <Trash2 className="size-3.5" /> Delete section
       </Button>
     </div>
   );

@@ -11,10 +11,13 @@ export interface ToolDefinition {
   icon: LucideIcon;
 }
 
-// Keyed by kind so a new shape fails the build until it has a tool to draw it with.
+// Keyed by kind so a new shape fails the build until it has a tool to draw it with. Labels are
+// what users see; the kind names are internal.
 const shapeTools: { [K in ShapeKind]: Omit<ToolDefinition, "id"> } = {
-  box: { label: "Box", key: "b", icon: Square },
+  box: { label: "Section", key: "s", icon: Square },
 };
+
+export const shapeLabel = (kind: ShapeKind) => shapeTools[kind].label;
 
 export const TOOLS: readonly ToolDefinition[] = [
   { id: "select", label: "Select", key: "v", icon: MousePointer2 },

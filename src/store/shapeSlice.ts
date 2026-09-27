@@ -1,4 +1,5 @@
 import type { StateCreator } from "zustand";
+import { moveWithContents } from "@/lib/shapes/moveWithContents";
 import type { Rect } from "@/lib/shapes/rect";
 import type { BoxShape, Diagram, Point, Shape, ShapeKind } from "@/lib/types";
 import type { DiagramState } from "./useDiagram";
@@ -16,6 +17,7 @@ export interface ShapeSlice {
 
   /** Adds a drawn shape, selects it and opens its title, then hands the canvas back to select. */
   addShape: (shape: Shape) => void;
+  /** Moves a shape and whatever sits fully inside it, measured from the gesture's start. */
   moveShape: (id: string, position: Point, commit?: boolean) => void;
   resizeShape: (id: string, rect: Rect, commit?: boolean) => void;
   updateBox: (id: string, patch: Partial<Pick<BoxShape, "title" | "color">>) => void;
@@ -40,7 +42,7 @@ export const createShapeSlice: StateCreator<DiagramState, [], [], ShapeSlice> = 
   },
 
   moveShape: (id, position, commit = true) =>
-    get().apply((d) => mapShape(d, id, (s) => ({ ...s, position })), { commit }),
+    get().apply((d) => moveWithContents(d, get().gestureOrigin ?? d, id, position), { commit }),
 
   resizeShape: (id, { x, y, width, height }, commit = true) =>
     get().apply(

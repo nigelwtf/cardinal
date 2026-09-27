@@ -28,9 +28,10 @@ whiteboard product, and doesn't cost a seat licence. Local-first, keyboard-drive
   positions, colours and the bits Mermaid can't express (nullability, defaults) intact.
 - **Import** Mermaid, SQL DDL (`CREATE TABLE`, inline + `ALTER TABLE` foreign keys), or a Cardinal JSON document.
 - **Export** Mermaid, PostgreSQL / MySQL / SQLite DDL, PNG, SVG, JSON.
-- **Boxes for grouping** — pick the box tool (`B`) and drag on the canvas to draw a tinted, titled
-  frame behind your tables. Nine colour presets, resizable, and saved with the document. Boxes
-  are decoration only: they stay out of Mermaid and SQL, and moving one never moves the tables on it.
+- **Sections for grouping** — pick the section tool (`S`) and drag on the canvas to draw a tinted,
+  titled frame behind your tables. Tables fully inside a section move with it, and deleting the
+  section leaves them in place. Nine colour presets, resizable, and saved with the document.
+  Sections stay out of Mermaid and SQL.
 - **Auto layout** via dagre, left-to-right or top-to-bottom.
 - **Command palette** (`⌘K`) for jumping to tables and running actions.
 - **Local-first storage** — every diagram lives in IndexedDB. No account, no server, no network calls.
@@ -52,7 +53,7 @@ pnpm dev
 | `⌘K` | Command palette |
 | `N` | New table |
 | `L` | Auto layout |
-| `V` / `B` | Select tool / box tool |
+| `V` / `S` | Select tool / section tool |
 | `⌘Z` / `⇧⌘Z` | Undo / redo |
 | `Double-click canvas` | New table at the cursor |
 | `Backspace` | Delete selection |
@@ -60,7 +61,7 @@ pnpm dev
 | `Double-click a dot` | Remove that bend |
 | `⌥` while dragging | Bend off-grid |
 | `Drag a line end` | Re-point the relationship |
-| `Double-click a box title` | Rename the box |
+| `Double-click a section title` | Rename the section |
 
 ## How it's put together
 

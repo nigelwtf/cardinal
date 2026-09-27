@@ -32,6 +32,12 @@ export const snapRect = (rect: Rect, grid = SHAPE_GRID): Rect => {
   };
 };
 
+export const rectContains = (outer: Rect, inner: Rect) =>
+  inner.x >= outer.x &&
+  inner.y >= outer.y &&
+  inner.x + inner.width <= outer.x + outer.width &&
+  inner.y + inner.height <= outer.y + outer.height;
+
 export const centeredRect = (center: Point, size: Size): Rect => ({
   x: center.x - size.width / 2,
   y: center.y - size.height / 2,

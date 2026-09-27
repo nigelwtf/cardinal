@@ -152,7 +152,11 @@ export function Canvas() {
         onConnect={onConnect}
         onReconnect={onReconnect}
         reconnectRadius={16}
-        onNodeDragStart={beginGesture}
+        onNodeDragStart={(_, node) => {
+          // A drag selects what it grabs, so the inspector and handles follow the pointer.
+          select({ kind: nodeKind(node), id: node.id });
+          beginGesture();
+        }}
         onNodeDragStop={endGesture}
         onNodeClick={(_, node) => select({ kind: nodeKind(node), id: node.id })}
         onEdgeClick={(_, edge) => select({ kind: "relationship", id: edge.id })}

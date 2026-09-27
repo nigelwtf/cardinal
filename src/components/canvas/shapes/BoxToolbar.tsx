@@ -23,12 +23,12 @@ export function BoxToolbar({
         colors={SHAPE_COLORS}
         value={color}
         onChange={onColorChange}
-        label="Box colour"
+        label="Section colour"
       />
       <Separator orientation="vertical" className="mx-0.5 !h-5 !self-center" />
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button size="icon-sm" variant="ghost" aria-label="Rename box" onClick={onRename}>
+          <Button size="icon-sm" variant="ghost" aria-label="Rename section" onClick={onRename}>
             <PenLine />
           </Button>
         </TooltipTrigger>
@@ -39,7 +39,7 @@ export function BoxToolbar({
           <Button
             size="icon-sm"
             variant="ghost"
-            aria-label="Delete box"
+            aria-label="Delete section"
             className="text-muted-foreground hover:text-destructive"
             onClick={onDelete}
           >

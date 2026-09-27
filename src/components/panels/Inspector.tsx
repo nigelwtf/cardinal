@@ -21,7 +21,7 @@ import { formatEnumType, isEnumType, parseEnumValues } from "@/lib/enum";
 import { CARDINALITY_LABEL } from "@/lib/mermaid/tokens";
 import { ACCENTS, COMMON_TYPES, type Cardinality, type Column } from "@/lib/types";
 import { useDiagram, type Selection } from "@/store/useDiagram";
-import { TOOLS } from "@/components/canvas/tools";
+import { TOOLS, shapeLabel } from "@/components/canvas/tools";
 import { ShapeInspector } from "./inspector/ShapeInspector";
 
 const CARDINALITIES: Cardinality[] = ["one", "zero-or-one", "one-or-more", "zero-or-more"];
@@ -480,7 +480,7 @@ function DiagramInspector() {
           ["Double-click a dot", "Remove a bend"],
           ["⌥ while dragging", "Bend off-grid"],
           ["Drag a line end", "Re-point a relationship"],
-          ["Double-click a title", "Rename a box"],
+          ["Double-click a title", "Rename a section"],
         ].map(([keys, description]) => (
           <div key={keys} className="flex items-center justify-between gap-3">
             <span>{description}</span>
@@ -503,6 +503,11 @@ const SELECTION_LABEL: Record<Selection["kind"], string> = {
 
 export function Inspector() {
   const selection = useDiagram((s) => s.selection);
+  const shapeKind = useDiagram((s) => {
+    const { selection } = s;
+    if (selection.kind !== "shape") return undefined;
+    return s.diagram.shapes.find((shape) => shape.id === selection.id)?.kind;
+  });
 
   let panel: ReactNode;
   switch (selection.kind) {
@@ -532,7 +537,7 @@ export function Inspector() {
         ))}
       </datalist>
       <div className="flex h-10 shrink-0 items-center border-b px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {SELECTION_LABEL[selection.kind]}
+        {shapeKind ? shapeLabel(shapeKind) : SELECTION_LABEL[selection.kind]}
       </div>
       <ScrollArea className="flex-1">{panel}</ScrollArea>
     </div>
