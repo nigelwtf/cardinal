@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { tableCenter } from "@/lib/layout";
 import { useDiagram } from "@/store/useDiagram";
 
 export function Explorer() {
@@ -32,10 +32,8 @@ export function Explorer() {
     const table = tables.find((t) => t.id === id);
     select({ kind: "table", id });
     if (table) {
-      setCenter(table.position.x + NODE_WIDTH / 2, table.position.y + tableHeight(table) / 2, {
-        zoom: 1,
-        duration: 350,
-      });
+      const { x, y } = tableCenter(table);
+      setCenter(x, y, { zoom: 1, duration: 350 });
     }
   };
 
