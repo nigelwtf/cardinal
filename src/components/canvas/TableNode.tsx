@@ -1,22 +1,12 @@
 import { memo, useLayoutEffect, useRef, useState } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, type NodeProps } from "@xyflow/react";
 import { ColumnKeyIcon } from "@/components/ColumnKeyIcon";
 import { cn } from "@/lib/utils";
 import { isEnumType } from "@/lib/enum";
 import { HEADER_HEIGHT, ROW_HEIGHT, tableWidth } from "@/lib/layout";
-import type { Column, Table } from "@/lib/types";
+import type { AnchorSide, Column, Table } from "@/lib/types";
 import { useDiagram } from "@/store/useDiagram";
-
-export const TABLE_HANDLE = "__table";
-
-export const handleId = (columnId: string, role: "source" | "target", side: "left" | "right") =>
-  `${columnId}|${role}|${side}`;
-
-export const columnFromHandle = (handle?: string | null) => {
-  if (!handle) return undefined;
-  const [columnId] = handle.split("|");
-  return columnId === TABLE_HANDLE ? undefined : columnId;
-};
+import { COLUMN_SIDES, HANDLE_POSITION, TABLE_HANDLE, TABLE_SIDES, handleId } from "./handles";
 
 export interface TableNodeData extends Record<string, unknown> {
   table: Table;
@@ -27,33 +17,25 @@ export interface TableNodeData extends Record<string, unknown> {
 const hiddenHandle =
   "!h-2 !w-2 !min-w-0 !min-h-0 !border-0 !bg-transparent opacity-0 transition-opacity";
 
-function ColumnHandles({ id }: { id: string }) {
+function ColumnHandles({ id, sides = COLUMN_SIDES }: { id: string; sides?: AnchorSide[] }) {
   return (
     <>
-      <Handle
-        id={handleId(id, "target", "left")}
-        type="target"
-        position={Position.Left}
-        className={hiddenHandle}
-      />
-      <Handle
-        id={handleId(id, "source", "left")}
-        type="source"
-        position={Position.Left}
-        className={hiddenHandle}
-      />
-      <Handle
-        id={handleId(id, "target", "right")}
-        type="target"
-        position={Position.Right}
-        className={hiddenHandle}
-      />
-      <Handle
-        id={handleId(id, "source", "right")}
-        type="source"
-        position={Position.Right}
-        className={hiddenHandle}
-      />
+      {sides.flatMap((side) => [
+        <Handle
+          key={`target-${side}`}
+          id={handleId(id, "target", side)}
+          type="target"
+          position={HANDLE_POSITION[side]}
+          className={hiddenHandle}
+        />,
+        <Handle
+          key={`source-${side}`}
+          id={handleId(id, "source", side)}
+          type="source"
+          position={HANDLE_POSITION[side]}
+          className={hiddenHandle}
+        />,
+      ])}
     </>
   );
 }
@@ -138,7 +120,7 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
         <span className="ml-auto shrink-0 text-[11px] tabular-nums text-muted-foreground">
           {table.columns.length}
         </span>
-        <ColumnHandles id={TABLE_HANDLE} />
+        <ColumnHandles id={TABLE_HANDLE} sides={TABLE_SIDES} />
       </div>
 
       <div className="py-1">
