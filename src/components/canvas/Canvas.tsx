@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useDiagram } from "@/store/useDiagram";
-import { NODE_WIDTH } from "@/lib/layout";
+import { DEFAULT_TABLE_SIZE, TABLE_WIDTHS } from "@/lib/layout";
 import { CanvasTools } from "./CanvasTools";
 import { isCanvasSurface, minimapColor, nodeKind, nodeMove } from "./canvasNodes";
 import { CrowFootMarkers } from "./CrowFootMarkers";
@@ -23,7 +23,7 @@ import { nodeTypes } from "./nodeTypes";
 import { RelationshipEdge } from "./RelationshipEdge";
 import { relationshipEdges } from "./relationshipEdges";
 import { shapeNodes } from "./shapeNodes";
-import { columnFromHandle } from "./tableHandles";
+import { columnFromHandle, sideFromHandle } from "./handles";
 import { tableNodes } from "./tableNodes";
 
 const edgeTypes = { relationship: RelationshipEdge };
@@ -111,6 +111,10 @@ export function Canvas() {
         targetTableId: connection.target,
         sourceColumnId,
         targetColumnId,
+        // Pin whichever side the connection was actually dropped on, rather than letting it
+        // auto-flip as the tables move — that auto-flip is still what happens when unset.
+        sourceSide: sideFromHandle(connection.sourceHandle),
+        targetSide: sideFromHandle(connection.targetHandle),
         sourceCardinality: "one",
         targetCardinality: "zero-or-more",
         identifying: true,
@@ -134,6 +138,8 @@ export function Canvas() {
         targetTableId: connection.target,
         sourceColumnId: columnFromHandle(connection.sourceHandle),
         targetColumnId,
+        sourceSide: sideFromHandle(connection.sourceHandle),
+        targetSide: sideFromHandle(connection.targetHandle),
       });
       if (targetColumnId) updateColumn(connection.target, targetColumnId, { fk: true });
     },
@@ -168,7 +174,10 @@ export function Canvas() {
         onDoubleClick={(event) => {
           if (!isCanvasSurface(event.target)) return;
           addTable(
-            screenToFlowPosition({ x: event.clientX - NODE_WIDTH / 2, y: event.clientY - 20 }),
+            screenToFlowPosition({
+              x: event.clientX - TABLE_WIDTHS[DEFAULT_TABLE_SIZE] / 2,
+              y: event.clientY - 20,
+            }),
           );
         }}
         zoomOnDoubleClick={false}

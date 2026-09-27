@@ -122,10 +122,10 @@ ever sees the canonical form.
 - Tailwind v4 utilities composed via `cn()` — re-exported from the `cn` package in
   `src/lib/utils.ts` (not the usual shadcn `clsx` + `tailwind-merge` pairing; import from
   `@/lib/utils` either way). Never string-concatenate class names.
-- Geometry constants with meaning beyond one component (`NODE_WIDTH`, `HEADER_HEIGHT`,
-  `ROW_HEIGHT`, `FOOTER_HEIGHT`, `tableHeight()` in `src/lib/layout.ts`) are imported, not re-typed
-  as magic numbers — dagre layout, the canvas node, and the Explorer's "focus this table" math all
-  have to agree or nodes visibly drift.
+- Geometry constants and helpers with meaning beyond one component (`HEADER_HEIGHT`, `ROW_HEIGHT`,
+  `FOOTER_HEIGHT`, `tableWidth()`, `tableHeight()`, `tableCenter()` in `src/lib/layout.ts`) are
+  imported, not re-typed as magic numbers — dagre layout, the canvas node, and the Explorer's
+  "focus this table" math all have to agree or nodes visibly drift.
 - Theming is `next-themes` with `attribute="class"` against the `:root` / `.dark` custom-property
   blocks in `index.css`. Style with the semantic variables (`bg-card`, `text-muted-foreground`,
   `border-border`); a raw hex that only reads in one theme is a bug. The per-table `accent` colors
@@ -170,6 +170,6 @@ clean. `.oxlintrc.json` enables exactly two rules: `react/rules-of-hooks` (error
 there) and `react/only-export-components` (warn). That second rule currently has four known
 warnings, all from files that export a helper alongside a component (`CrowFootMarkers.tsx`, and
 the `cva` variants in `ui/badge`, `ui/button`, `ui/tabs`). Don't add a fifth: put shared helpers in
-a sibling module (`canvas/edgePath.ts` and `canvas/tableHandles.ts` are the pattern) instead of
+a sibling module (`canvas/edgePath.ts` and `canvas/handles.ts` are the pattern) instead of
 exporting them from a component file. Retiring the existing four is a welcome side effect of the
 §1 file splits.

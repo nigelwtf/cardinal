@@ -1,5 +1,5 @@
 import type { Node } from "@xyflow/react";
-import { NODE_WIDTH, tableHeight } from "@/lib/layout";
+import { tableHeight, tableWidth } from "@/lib/layout";
 import type { Table } from "@/lib/types";
 import type { Selection } from "@/store/useDiagram";
 import type { TableNodeData } from "./TableNode";
@@ -15,6 +15,6 @@ export const tableNodes = (
     position: table.position,
     selected: selection.kind === "table" && selection.id === table.id,
     data: { table, highlightedColumns, dimmed: false },
-    width: NODE_WIDTH,
+    width: tableWidth(table),
     height: tableHeight(table),
   }));

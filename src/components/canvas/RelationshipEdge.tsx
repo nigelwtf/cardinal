@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
@@ -28,6 +29,10 @@ const GRID = 8;
 const ALIGN = 7;
 /** Keeps handles alive while the cursor crosses the gap between the line and a dot. */
 const HOVER_GRACE = 140;
+
+// The handles sit inside React Flow's pane, whose click handler clears the selection.
+// That hides the handles, so the second click of a double-click would land on the pane.
+const keepSelection = (event: ReactMouseEvent) => event.stopPropagation();
 
 const snap = (value: number) => Math.round(value / GRID) * GRID;
 
@@ -216,6 +221,7 @@ function RelationshipEdgeInner({
                 onMouseEnter={onEnter}
                 onMouseLeave={onLeave}
                 onPointerDown={(event) => beginDrag(event, index, false)}
+                onClick={keepSelection}
                 onDoubleClick={(event) => {
                   event.stopPropagation();
                   removeWaypoint(index);
@@ -245,6 +251,7 @@ function RelationshipEdgeInner({
                   onMouseEnter={onEnter}
                   onMouseLeave={onLeave}
                   onPointerDown={(event) => beginDrag(event, index, true)}
+                  onClick={keepSelection}
                 >
                   <span
                     className={cn(
