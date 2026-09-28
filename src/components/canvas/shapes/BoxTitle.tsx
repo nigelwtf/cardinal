@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { TITLE_CLEARANCE } from "./boxStyle";
-import { InlineTitleInput } from "./InlineTitleInput";
+import { InlineTitleInput } from "../InlineTitleInput";
 
 /** The box's name, centred just above its top edge in the box colour. Double-click to rename. */
 export function BoxTitle({
@@ -32,7 +32,7 @@ export function BoxTitle({
           initial={title}
           onCommit={onCommit}
           onCancel={onCancel}
-          className={text}
+          className={cn(text, "text-center")}
         />
       ) : (
         <span
