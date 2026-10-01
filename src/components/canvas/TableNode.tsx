@@ -1,12 +1,11 @@
-import { memo, useLayoutEffect, useRef, useState } from "react";
-import { Handle, type NodeProps } from "@xyflow/react";
-import { ColumnKeyIcon } from "@/components/ColumnKeyIcon";
+import { memo, useState } from "react";
+import type { NodeProps } from "@xyflow/react";
+import { ROW_HEIGHT, tableWidth } from "@/lib/layout";
+import type { Table } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { isEnumType } from "@/lib/enum";
-import { HEADER_HEIGHT, ROW_HEIGHT, tableWidth } from "@/lib/layout";
-import type { AnchorSide, Column, Table } from "@/lib/types";
 import { useDiagram } from "@/store/useDiagram";
-import { COLUMN_SIDES, HANDLE_POSITION, TABLE_HANDLE, TABLE_SIDES, handleId } from "./handles";
+import { ColumnRow } from "./table/ColumnRow";
+import { TableHeader } from "./table/TableHeader";
 
 export interface TableNodeData extends Record<string, unknown> {
   table: Table;
@@ -14,89 +13,13 @@ export interface TableNodeData extends Record<string, unknown> {
   dimmed: boolean;
 }
 
-const hiddenHandle =
-  "!h-2 !w-2 !min-w-0 !min-h-0 !border-0 !bg-transparent opacity-0 transition-opacity";
-
-function ColumnHandles({ id, sides = COLUMN_SIDES }: { id: string; sides?: AnchorSide[] }) {
-  return (
-    <>
-      {sides.flatMap((side) => [
-        <Handle
-          key={`target-${side}`}
-          id={handleId(id, "target", side)}
-          type="target"
-          position={HANDLE_POSITION[side]}
-          className={hiddenHandle}
-        />,
-        <Handle
-          key={`source-${side}`}
-          id={handleId(id, "source", side)}
-          type="source"
-          position={HANDLE_POSITION[side]}
-          className={hiddenHandle}
-        />,
-      ])}
-    </>
-  );
-}
-
-/** The type badge for an enum column: clipped to one line with an ellipsis by default, with an
- *  `[expand]` link (shown only once the summary is actually too long to fit) that wraps every
- *  symbol across multiple lines instead of hiding any of them. */
-function EnumTypeBadge({
-  column,
-  expanded,
-  onToggle,
-}: {
-  column: Column;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [overflowing, setOverflowing] = useState(false);
-
-  useLayoutEffect(() => {
-    const el = textRef.current;
-    if (!el || expanded) return;
-    const check = () => setOverflowing(el.scrollWidth > el.clientWidth + 1);
-    check();
-    const observer = new ResizeObserver(check);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [column.type, expanded]);
-
-  return (
-    <span
-      className={cn(
-        "flex min-w-0 items-baseline gap-1 font-mono text-[10px] text-muted-foreground",
-        expanded ? "flex-1 flex-wrap" : "ml-auto shrink justify-end",
-      )}
-    >
-      <span
-        ref={textRef}
-        title={!expanded && overflowing ? column.type : undefined}
-        className={cn("min-w-0", expanded ? "whitespace-normal break-words" : "truncate")}
-      >
-        {column.type}
-      </span>
-      {(expanded || overflowing) && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="shrink-0 font-sans font-medium text-primary hover:underline"
-        >
-          [{expanded ? "shrink" : "expand"}]
-        </button>
-      )}
-    </span>
-  );
-}
-
 function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData }) {
   const { table, highlightedColumns, dimmed } = data;
   const highlighted = new Set(highlightedColumns);
   const expandedEnumColumns = useDiagram((s) => s.expandedEnumColumns);
   const toggleEnumExpanded = useDiagram((s) => s.toggleEnumExpanded);
+  const updateTable = useDiagram((s) => s.updateTable);
+  const [renaming, setRenaming] = useState(false);
 
   return (
     <div
@@ -109,19 +32,19 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
         dimmed && "opacity-35",
       )}
     >
-      <div
-        className="flex items-center gap-2 rounded-t-xl border-b px-3"
-        style={{
-          height: HEADER_HEIGHT,
-          background: `color-mix(in oklab, ${table.accent} 10%, transparent)`,
+      <TableHeader
+        name={table.name}
+        accent={table.accent}
+        columnCount={table.columns.length}
+        editing={renaming}
+        onStartEdit={() => setRenaming(true)}
+        onCommit={(name) => {
+          // A table always has a name, so clearing the field keeps the old one.
+          if (name && name !== table.name) updateTable(table.id, { name });
+          setRenaming(false);
         }}
-      >
-        <span className="truncate text-sm font-semibold tracking-tight">{table.name}</span>
-        <span className="ml-auto shrink-0 text-[11px] tabular-nums text-muted-foreground">
-          {table.columns.length}
-        </span>
-        <ColumnHandles id={TABLE_HANDLE} sides={TABLE_SIDES} />
-      </div>
+        onCancel={() => setRenaming(false)}
+      />
 
       <div className="py-1">
         {table.columns.length === 0 && (
@@ -132,49 +55,15 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
             no columns
           </div>
         )}
-        {table.columns.map((column) => {
-          const enumType = isEnumType(column.type);
-          const expanded = enumType && expandedEnumColumns.has(column.id);
-          return (
-            <div
-              key={column.id}
-              className={cn(
-                "relative flex gap-2 px-3 text-xs",
-                expanded ? "items-start py-1" : "items-center",
-                highlighted.has(column.id) && "bg-primary/10",
-              )}
-              style={expanded ? { minHeight: ROW_HEIGHT } : { height: ROW_HEIGHT }}
-            >
-              <span
-                className="flex w-3.5 shrink-0 items-center justify-center"
-                style={{ height: ROW_HEIGHT }}
-              >
-                <ColumnKeyIcon pk={column.pk} fk={column.fk} uk={column.uk} className="size-3" />
-              </span>
-              <span className={cn("truncate", column.pk && "font-medium", enumType && "shrink-0")}>
-                {column.name}
-              </span>
-              {column.nullable && !column.pk && (
-                <span className="shrink-0 text-muted-foreground/60">?</span>
-              )}
-              {enumType ? (
-                <EnumTypeBadge
-                  column={column}
-                  expanded={expanded}
-                  onToggle={() => toggleEnumExpanded(column.id)}
-                />
-              ) : (
-                <span
-                  className="ml-auto shrink-0 truncate font-mono text-[10px] text-muted-foreground"
-                  title={column.type}
-                >
-                  {column.type}
-                </span>
-              )}
-              <ColumnHandles id={column.id} />
-            </div>
-          );
-        })}
+        {table.columns.map((column) => (
+          <ColumnRow
+            key={column.id}
+            column={column}
+            highlighted={highlighted.has(column.id)}
+            enumExpanded={expandedEnumColumns.has(column.id)}
+            onToggleEnum={() => toggleEnumExpanded(column.id)}
+          />
+        ))}
       </div>
     </div>
   );

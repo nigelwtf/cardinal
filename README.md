@@ -62,6 +62,7 @@ pnpm dev
 | `⌥` while dragging | Bend off-grid |
 | `Drag a line end` | Re-point the relationship |
 | `Double-click a section title` | Rename the section |
+| `Double-click a table name` | Rename the table |
 
 ## How it's put together
 
