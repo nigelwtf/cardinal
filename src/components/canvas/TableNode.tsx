@@ -5,6 +5,7 @@ import type { Table } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useDiagram } from "@/store/useDiagram";
 import { ColumnRow } from "./table/ColumnRow";
+import { hasOpenEnum } from "./table/hasOpenEnum";
 import { rowLayoutKey } from "./table/rowLayoutKey";
 import { TableHeader } from "./table/TableHeader";
 
@@ -25,9 +26,10 @@ function TableNodeInner({ id, data, selected }: NodeProps & { data: TableNodeDat
   const rowLayout = rowLayoutKey(table, expandedEnumColumns);
 
   // The canvas hands React Flow its measured sizes, so it only re-reads handle positions when a
-  // node resizes. Rows can move without a resize, so ask for the re-read when they do. Not on
-  // mount: React Flow measures a new node itself, and hundreds of tables asking at once is slow.
-  const measuredLayout = useRef(rowLayout);
+  // node resizes. Rows can move without a resize, so ask for the re-read when they do. On mount
+  // only with an open enum, whose rows may have wrapped while it was off screen: every table
+  // re-reading on mount queries the whole DOM hundreds of times.
+  const measuredLayout = useRef(hasOpenEnum(table, expandedEnumColumns) ? undefined : rowLayout);
   useEffect(() => {
     if (measuredLayout.current === rowLayout) return;
     measuredLayout.current = rowLayout;

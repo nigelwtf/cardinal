@@ -44,6 +44,7 @@ function ZoomBadge() {
 export function Canvas() {
   const diagram = useDiagram((s) => s.diagram);
   const selection = useDiagram((s) => s.selection);
+  const expandedEnumColumns = useDiagram((s) => s.expandedEnumColumns);
   const select = useDiagram((s) => s.select);
   const moveTable = useDiagram((s) => s.moveTable);
   const addRelationship = useDiagram((s) => s.addRelationship);
@@ -83,11 +84,23 @@ export function Canvas() {
       withMeasurements(
         [
           ...shapeNodes(diagram.shapes, selection),
-          ...tableNodes(diagram.tables, selection, highlightedColumns),
+          ...tableNodes({
+            tables: diagram.tables,
+            selection,
+            highlightedColumns,
+            expandedEnumColumns,
+          }),
         ],
         measurements,
       ),
-    [diagram.shapes, diagram.tables, highlightedColumns, measurements, selection],
+    [
+      diagram.shapes,
+      diagram.tables,
+      expandedEnumColumns,
+      highlightedColumns,
+      measurements,
+      selection,
+    ],
   );
 
   const nodes = useReusedItems(builtNodes);
@@ -196,6 +209,8 @@ export function Canvas() {
           );
         }}
         zoomOnDoubleClick={false}
+        // Tables carry their handle positions (see `tableHandles`), so edges reach off-screen ones.
+        onlyRenderVisibleElements
         fitView
         fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
         minZoom={0.15}

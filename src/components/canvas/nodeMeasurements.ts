@@ -28,13 +28,16 @@ export function measure(
   return same ? measurements : next;
 }
 
+const declaredSize = ({ width, height }: Node): Size | undefined =>
+  width !== undefined && height !== undefined ? { width, height } : undefined;
+
 /**
- * Hands each node the size React Flow measured for it. A node rebuilt without `measured` makes
- * React Flow drop its size and handle positions and measure it again a frame later, which costs
- * a layout pass on every edit and leaves a gap where a drag reads an unmeasured node.
+ * Hands each node the size React Flow measured for it, or its declared size until then. A node
+ * rebuilt without `measured` is measured again a frame later, and `fitView` skips unmeasured
+ * nodes, which off-screen ones stay while `onlyRenderVisibleElements` leaves them unmounted.
  */
 export const withMeasurements = <N extends Node>(nodes: N[], measurements: NodeMeasurements) =>
   nodes.map((node) => {
-    const measured = measurements.get(node.id);
+    const measured = measurements.get(node.id) ?? declaredSize(node);
     return measured ? { ...node, measured } : node;
   });

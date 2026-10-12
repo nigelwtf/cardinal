@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /** The type badge for an enum column: clipped to one line with an ellipsis by default, with an
@@ -16,11 +16,12 @@ export function EnumTypeBadge({
   const textRef = useRef<HTMLSpanElement>(null);
   const [overflowing, setOverflowing] = useState(false);
 
-  useLayoutEffect(() => {
+  // The observer's first report arrives after layout, so reading widths there is free. Reading
+  // them here as well forced a layout per badge as a large diagram's tables mounted.
+  useEffect(() => {
     const el = textRef.current;
     if (!el || expanded) return;
     const check = () => setOverflowing(el.scrollWidth > el.clientWidth + 1);
-    check();
     const observer = new ResizeObserver(check);
     observer.observe(el);
     return () => observer.disconnect();
