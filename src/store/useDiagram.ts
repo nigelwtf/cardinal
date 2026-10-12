@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { autoLayout, placeNewTables, type LayoutDirection } from "@/lib/layout";
 import { parseMermaid, reconcile, type ParseResult } from "@/lib/mermaid/parse";
 import { emptyDiagram } from "@/lib/sample";
+import { patched } from "@/lib/patched";
 import { removeItems, type ItemIds } from "@/lib/removeItems";
 import type { Diagram } from "@/lib/types";
 import { createRelationshipSlice, type RelationshipSlice } from "./relationshipSlice";
@@ -66,11 +67,11 @@ export const useDiagram = create<DiagramState>((set, get, store) => ({
 
   apply: (fn, options) => {
     const { diagram, past } = get();
-    const next = touch(fn(diagram));
+    const next = fn(diagram);
     if (next === diagram) return;
     const commit = options?.commit ?? true;
     set({
-      ...showDiagram(get(), next),
+      ...showDiagram(get(), touch(next)),
       past: commit ? [...past, diagram].slice(-HISTORY_LIMIT) : past,
       future: commit ? [] : get().future,
       dirty: true,
@@ -127,7 +128,7 @@ export const useDiagram = create<DiagramState>((set, get, store) => ({
       dirty: true,
     }),
 
-  renameDiagram: (name) => get().apply((d) => ({ ...d, name })),
+  renameDiagram: (name) => get().apply((d) => patched(d, { name })),
 
   removeItems: (ids) => {
     get().apply((d) => removeItems(d, ids));

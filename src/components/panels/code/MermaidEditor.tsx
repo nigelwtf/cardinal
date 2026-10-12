@@ -23,11 +23,17 @@ export function MermaidEditor() {
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  const applyNow = (value: string) => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    applyMermaid(value);
+  };
+
   const onChange = (value: string) => {
     setDraft(value);
     editing.current = true;
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => applyMermaid(value), 500);
+    timer.current = setTimeout(() => applyNow(value), 500);
   };
 
   return (
@@ -50,9 +56,9 @@ export function MermaidEditor() {
         value={draft}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => {
-          // Reformatting mid-keystroke would fight the caret, so normalise on blur.
-          clearTimeout(timer.current);
-          applyMermaid(draft);
+          // Typing still waiting out its pause applies now. Text that already applied is left
+          // alone, since applying it again would only add an empty undo step.
+          if (timer.current !== undefined) applyNow(draft);
           editing.current = false;
         }}
         spellCheck={false}

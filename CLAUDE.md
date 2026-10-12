@@ -67,11 +67,12 @@ Inside the single store, `src/store/useDiagram.ts` and the slices beside it (`ta
 
 Two details that bite:
 
-- `apply` bails on `next === diagram` identity. A reducer that wants to be a no-op must
-  `return d` itself — returning a fresh spread of unchanged data still pushes an undo entry
-  (`reorderColumn`'s out-of-range guard returns the unchanged *table*, so the diagram is still
-  re-spread; fix that shape if you touch it).
-- Mutations use the named helpers `mapTable` and `touch` rather than inlining
+- `apply` bails on `next === diagram` identity, before it stamps `updatedAt`. A reducer that
+  wants to be a no-op must `return d` itself, because a fresh spread of unchanged data still
+  pushes an undo entry. `mapTable` and `mapShape` hand back the diagram untouched when their
+  callback returns the same item, and `patched` (`src/lib/patched.ts`) hands back the item
+  untouched when a patch changes no value.
+- Mutations use the named helpers `mapTable`, `patched` and `touch` rather than inlining
   `{ ...diagram, tables: diagram.tables.map(...) }`. Add a helper when you'd be writing the third
   copy of a spread, not the second.
 

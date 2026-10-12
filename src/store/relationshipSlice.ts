@@ -1,5 +1,7 @@
 import type { StateCreator } from "zustand";
 import { newId } from "@/lib/id";
+import { mapById } from "@/lib/mapById";
+import { patched } from "@/lib/patched";
 import type { Diagram, Relationship } from "@/lib/types";
 import { mapTable, patchColumn } from "./tableSlice";
 import type { DiagramState } from "./useDiagram";
@@ -50,10 +52,9 @@ export const createRelationshipSlice: StateCreator<DiagramState, [], [], Relatio
     ),
 
   updateRelationship: (id, patch) =>
-    get().apply((d) => ({
-      ...d,
-      relationships: d.relationships.map((r) => (r.id === id ? { ...r, ...patch } : r)),
-    })),
+    get().apply((d) =>
+      patched(d, { relationships: mapById(d.relationships, id, (r) => patched(r, patch)) }),
+    ),
 
   setWaypoints: (id, waypoints, commit = true) =>
     get().apply(

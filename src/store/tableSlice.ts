@@ -1,5 +1,7 @@
 import type { StateCreator } from "zustand";
 import { newId } from "@/lib/id";
+import { mapById } from "@/lib/mapById";
+import { patched } from "@/lib/patched";
 import { ACCENTS, type Column, type Diagram, type Table } from "@/lib/types";
 import type { DiagramState } from "./useDiagram";
 
@@ -16,20 +18,20 @@ export interface TableSlice {
   reorderColumn: (tableId: string, columnId: string, delta: number) => void;
 }
 
-export const mapTable = (diagram: Diagram, id: string, fn: (table: Table) => Table): Diagram => ({
-  ...diagram,
-  tables: diagram.tables.map((table) => (table.id === id ? fn(table) : table)),
-});
+/** `diagram` with one table passed through `fn`, or `diagram` itself when nothing changed. */
+export const mapTable = (diagram: Diagram, id: string, fn: (table: Table) => Table): Diagram =>
+  patched(diagram, { tables: mapById(diagram.tables, id, fn) });
 
 /** `table` with one column patched. A primary key is never nullable. */
-export const patchColumn = (table: Table, columnId: string, patch: Partial<Column>): Table => ({
-  ...table,
-  columns: table.columns.map((c) =>
-    c.id === columnId
-      ? { ...c, ...patch, nullable: (patch.pk ?? c.pk) ? false : (patch.nullable ?? c.nullable) }
-      : c,
-  ),
-});
+export const patchColumn = (table: Table, columnId: string, patch: Partial<Column>): Table =>
+  patched(table, {
+    columns: mapById(table.columns, columnId, (c) =>
+      patched(c, {
+        ...patch,
+        nullable: (patch.pk ?? c.pk) ? false : (patch.nullable ?? c.nullable),
+      }),
+    ),
+  });
 
 export const newColumn = (partial: Partial<Column> = {}): Column => ({
   id: newId("col"),
@@ -64,7 +66,7 @@ export const createTableSlice: StateCreator<DiagramState, [], [], TableSlice> = 
     return id;
   },
 
-  updateTable: (id, patch) => get().apply((d) => mapTable(d, id, (t) => ({ ...t, ...patch }))),
+  updateTable: (id, patch) => get().apply((d) => mapTable(d, id, (t) => patched(t, patch))),
 
   removeTable: (id) => get().removeItems({ tables: [id] }),
 
@@ -83,7 +85,10 @@ export const createTableSlice: StateCreator<DiagramState, [], [], TableSlice> = 
   },
 
   moveTable: (id, position, commit = true) =>
-    get().apply((d) => mapTable(d, id, (t) => ({ ...t, position })), { commit }),
+    get().apply(
+      (d) => mapTable(d, id, (t) => patched(t, { position: patched(t.position, position) })),
+      { commit },
+    ),
 
   addColumn: (tableId, partial) =>
     get().apply((d) =>
