@@ -53,8 +53,5 @@ export const createShapeSlice: StateCreator<DiagramState, [], [], ShapeSlice> = 
   updateBox: (id, patch) =>
     get().apply((d) => mapShape(d, id, (s) => (s.kind === "box" ? { ...s, ...patch } : s))),
 
-  removeShape: (id) => {
-    get().apply((d) => ({ ...d, shapes: d.shapes.filter((s) => s.id !== id) }));
-    if (get().editingShapeId === id) set({ editingShapeId: null });
-  },
+  removeShape: (id) => get().removeItems({ shapes: [id] }),
 });

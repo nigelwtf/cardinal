@@ -42,16 +42,13 @@ export function Canvas() {
   const selection = useDiagram((s) => s.selection);
   const select = useDiagram((s) => s.select);
   const moveTable = useDiagram((s) => s.moveTable);
-  const addRelationship = useDiagram((s) => s.addRelationship);
-  const updateRelationship = useDiagram((s) => s.updateRelationship);
-  const removeTable = useDiagram((s) => s.removeTable);
-  const removeRelationship = useDiagram((s) => s.removeRelationship);
+  const connectTables = useDiagram((s) => s.connectTables);
+  const repointRelationship = useDiagram((s) => s.repointRelationship);
+  const removeItems = useDiagram((s) => s.removeItems);
   const moveShape = useDiagram((s) => s.moveShape);
-  const removeShape = useDiagram((s) => s.removeShape);
   const addTable = useDiagram((s) => s.addTable);
   const beginGesture = useDiagram((s) => s.beginGesture);
   const endGesture = useDiagram((s) => s.endGesture);
-  const updateColumn = useDiagram((s) => s.updateColumn);
   const { screenToFlowPosition, getNode } = useReactFlow();
 
   const selectedRelationship = useMemo(
@@ -106,7 +103,8 @@ export function Canvas() {
       const targetTable = diagram.tables.find((t) => t.id === connection.target);
       const sourceTable = diagram.tables.find((t) => t.id === connection.source);
 
-      addRelationship({
+      // Its many-side column becomes a foreign key in the same undo step.
+      connectTables({
         sourceTableId: connection.source,
         targetTableId: connection.target,
         sourceColumnId,
@@ -120,30 +118,24 @@ export function Canvas() {
         identifying: true,
         label: sourceTable ? `has ${targetTable?.name.toLowerCase() ?? "rows"}` : "relates to",
       });
-
-      // The many-side column is now a foreign key.
-      if (targetColumnId && connection.target)
-        updateColumn(connection.target, targetColumnId, { fk: true });
     },
-    [addRelationship, diagram.tables, updateColumn],
+    [connectTables, diagram.tables],
   );
 
   // Dragging an edge end onto a different column re-points the relationship.
   const onReconnect: OnReconnect = useCallback(
     (oldEdge, connection) => {
       if (!connection.source || !connection.target) return;
-      const targetColumnId = columnFromHandle(connection.targetHandle);
-      updateRelationship(oldEdge.id, {
+      repointRelationship(oldEdge.id, {
         sourceTableId: connection.source,
         targetTableId: connection.target,
         sourceColumnId: columnFromHandle(connection.sourceHandle),
-        targetColumnId,
+        targetColumnId: columnFromHandle(connection.targetHandle),
         sourceSide: sideFromHandle(connection.sourceHandle),
         targetSide: sideFromHandle(connection.targetHandle),
       });
-      if (targetColumnId) updateColumn(connection.target, targetColumnId, { fk: true });
     },
-    [updateColumn, updateRelationship],
+    [repointRelationship],
   );
 
   return (
@@ -167,10 +159,14 @@ export function Canvas() {
         onNodeClick={(_, node) => select({ kind: nodeKind(node), id: node.id })}
         onEdgeClick={(_, edge) => select({ kind: "relationship", id: edge.id })}
         onPaneClick={() => select({ kind: "none" })}
-        onNodesDelete={(deleted) =>
-          deleted.forEach((n) => (nodeKind(n) === "shape" ? removeShape(n.id) : removeTable(n.id)))
+        // One undo step for everything Backspace takes, connected edges included.
+        onDelete={({ nodes: deleted, edges: deletedEdges }) =>
+          removeItems({
+            tables: deleted.filter((n) => nodeKind(n) === "table").map((n) => n.id),
+            shapes: deleted.filter((n) => nodeKind(n) === "shape").map((n) => n.id),
+            relationships: deletedEdges.map((e) => e.id),
+          })
         }
-        onEdgesDelete={(deleted) => deleted.forEach((e) => removeRelationship(e.id))}
         onDoubleClick={(event) => {
           if (!isCanvasSurface(event.target)) return;
           addTable(

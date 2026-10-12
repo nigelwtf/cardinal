@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { autoLayout, placeNewTables, type LayoutDirection } from "@/lib/layout";
 import { parseMermaid, reconcile, type ParseResult } from "@/lib/mermaid/parse";
 import { emptyDiagram } from "@/lib/sample";
+import { removeItems, type ItemIds } from "@/lib/removeItems";
 import type { Diagram } from "@/lib/types";
 import { createRelationshipSlice, type RelationshipSlice } from "./relationshipSlice";
 import { selectionIn } from "./selectionIn";
@@ -37,6 +38,8 @@ export interface DiagramState extends SelectionSlice, TableSlice, RelationshipSl
   replaceDiagram: (diagram: Diagram, options?: { resetHistory?: boolean }) => void;
   renameDiagram: (name: string) => void;
 
+  /** Delete items as one undo step, as Backspace on the canvas does. */
+  removeItems: (ids: ItemIds) => void;
   layout: (direction?: LayoutDirection) => void;
   applyMermaid: (source: string) => void;
 }
@@ -125,6 +128,12 @@ export const useDiagram = create<DiagramState>((set, get, store) => ({
     }),
 
   renameDiagram: (name) => get().apply((d) => ({ ...d, name })),
+
+  removeItems: (ids) => {
+    get().apply((d) => removeItems(d, ids));
+    const { editingShapeId } = get();
+    if (editingShapeId && ids.shapes?.includes(editingShapeId)) set({ editingShapeId: null });
+  },
 
   layout: (direction = "LR") => get().apply((d) => autoLayout(d, direction)),
 

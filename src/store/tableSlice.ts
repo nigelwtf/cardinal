@@ -16,9 +16,19 @@ export interface TableSlice {
   reorderColumn: (tableId: string, columnId: string, delta: number) => void;
 }
 
-const mapTable = (diagram: Diagram, id: string, fn: (table: Table) => Table): Diagram => ({
+export const mapTable = (diagram: Diagram, id: string, fn: (table: Table) => Table): Diagram => ({
   ...diagram,
   tables: diagram.tables.map((table) => (table.id === id ? fn(table) : table)),
+});
+
+/** `table` with one column patched. A primary key is never nullable. */
+export const patchColumn = (table: Table, columnId: string, patch: Partial<Column>): Table => ({
+  ...table,
+  columns: table.columns.map((c) =>
+    c.id === columnId
+      ? { ...c, ...patch, nullable: (patch.pk ?? c.pk) ? false : (patch.nullable ?? c.nullable) }
+      : c,
+  ),
 });
 
 export const newColumn = (partial: Partial<Column> = {}): Column => ({
@@ -56,14 +66,7 @@ export const createTableSlice: StateCreator<DiagramState, [], [], TableSlice> = 
 
   updateTable: (id, patch) => get().apply((d) => mapTable(d, id, (t) => ({ ...t, ...patch }))),
 
-  removeTable: (id) =>
-    get().apply((d) => ({
-      ...d,
-      tables: d.tables.filter((t) => t.id !== id),
-      relationships: d.relationships.filter(
-        (r) => r.sourceTableId !== id && r.targetTableId !== id,
-      ),
-    })),
+  removeTable: (id) => get().removeItems({ tables: [id] }),
 
   duplicateTable: (id) => {
     const source = get().diagram.tables.find((t) => t.id === id);
@@ -88,20 +91,7 @@ export const createTableSlice: StateCreator<DiagramState, [], [], TableSlice> = 
     ),
 
   updateColumn: (tableId, columnId, patch) =>
-    get().apply((d) =>
-      mapTable(d, tableId, (t) => ({
-        ...t,
-        columns: t.columns.map((c) =>
-          c.id === columnId
-            ? {
-                ...c,
-                ...patch,
-                nullable: (patch.pk ?? c.pk) ? false : (patch.nullable ?? c.nullable),
-              }
-            : c,
-        ),
-      })),
-    ),
+    get().apply((d) => mapTable(d, tableId, (t) => patchColumn(t, columnId, patch))),
 
   removeColumn: (tableId, columnId) =>
     get().apply((d) => ({
