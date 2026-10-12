@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -19,6 +19,7 @@ import { DEFAULT_TABLE_SIZE, TABLE_WIDTHS } from "@/lib/layout";
 import { CanvasTools } from "./CanvasTools";
 import { isCanvasSurface, minimapColor, nodeKind, nodeMove } from "./canvasNodes";
 import { CrowFootMarkers } from "./CrowFootMarkers";
+import { measure, withMeasurements, type NodeMeasurements } from "./nodeMeasurements";
 import { nodeTypes } from "./nodeTypes";
 import { RelationshipEdge } from "./RelationshipEdge";
 import { relationshipEdges } from "./relationshipEdges";
@@ -70,19 +71,26 @@ export function Canvas() {
     [selectedRelationship],
   );
 
+  const [measurements, setMeasurements] = useState<NodeMeasurements>(() => new Map());
+
   // Shapes come first so they paint underneath; their negative z-index keeps them there.
   const nodes: Node[] = useMemo(
-    () => [
-      ...shapeNodes(diagram.shapes, selection),
-      ...tableNodes(diagram.tables, selection, highlightedColumns),
-    ],
-    [diagram.shapes, diagram.tables, highlightedColumns, selection],
+    () =>
+      withMeasurements(
+        [
+          ...shapeNodes(diagram.shapes, selection),
+          ...tableNodes(diagram.tables, selection, highlightedColumns),
+        ],
+        measurements,
+      ),
+    [diagram.shapes, diagram.tables, highlightedColumns, measurements, selection],
   );
 
   const edges = useMemo(() => relationshipEdges(diagram, selection), [diagram, selection]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      setMeasurements((current) => measure(current, changes, (id) => getNode(id) !== undefined));
       const kindOf = (id: string) => {
         const node = getNode(id);
         return node ? nodeKind(node) : "table";

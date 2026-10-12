@@ -1,10 +1,11 @@
-import { memo, useState } from "react";
-import type { NodeProps } from "@xyflow/react";
+import { memo, useEffect, useRef, useState } from "react";
+import { useUpdateNodeInternals, type NodeProps } from "@xyflow/react";
 import { ROW_HEIGHT, tableWidth } from "@/lib/layout";
 import type { Table } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useDiagram } from "@/store/useDiagram";
 import { ColumnRow } from "./table/ColumnRow";
+import { rowLayoutKey } from "./table/rowLayoutKey";
 import { TableHeader } from "./table/TableHeader";
 
 export interface TableNodeData extends Record<string, unknown> {
@@ -13,13 +14,25 @@ export interface TableNodeData extends Record<string, unknown> {
   dimmed: boolean;
 }
 
-function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData }) {
+function TableNodeInner({ id, data, selected }: NodeProps & { data: TableNodeData }) {
   const { table, highlightedColumns, dimmed } = data;
   const highlighted = new Set(highlightedColumns);
   const expandedEnumColumns = useDiagram((s) => s.expandedEnumColumns);
   const toggleEnumExpanded = useDiagram((s) => s.toggleEnumExpanded);
   const updateTable = useDiagram((s) => s.updateTable);
   const [renaming, setRenaming] = useState(false);
+  const updateNodeInternals = useUpdateNodeInternals();
+  const rowLayout = rowLayoutKey(table, expandedEnumColumns);
+
+  // The canvas hands React Flow its measured sizes, so it only re-reads handle positions when a
+  // node resizes. Rows can move without a resize, so ask for the re-read when they do. Not on
+  // mount: React Flow measures a new node itself, and hundreds of tables asking at once is slow.
+  const measuredLayout = useRef(rowLayout);
+  useEffect(() => {
+    if (measuredLayout.current === rowLayout) return;
+    measuredLayout.current = rowLayout;
+    updateNodeInternals(id);
+  }, [rowLayout, id, updateNodeInternals]);
 
   return (
     <div
