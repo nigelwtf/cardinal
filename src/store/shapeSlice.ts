@@ -55,8 +55,6 @@ export const createShapeSlice: StateCreator<DiagramState, [], [], ShapeSlice> = 
 
   removeShape: (id) => {
     get().apply((d) => ({ ...d, shapes: d.shapes.filter((s) => s.id !== id) }));
-    const { selection, editingShapeId } = get();
-    if (selection.kind === "shape" && selection.id === id) set({ selection: { kind: "none" } });
-    if (editingShapeId === id) set({ editingShapeId: null });
+    if (get().editingShapeId === id) set({ editingShapeId: null });
   },
 });

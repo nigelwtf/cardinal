@@ -4,6 +4,7 @@ import { parseMermaid, reconcile, type ParseResult } from "@/lib/mermaid/parse";
 import { emptyDiagram } from "@/lib/sample";
 import type { Diagram } from "@/lib/types";
 import { createRelationshipSlice, type RelationshipSlice } from "./relationshipSlice";
+import { selectionIn } from "./selectionIn";
 import { createSelectionSlice, type SelectionSlice } from "./selectionSlice";
 import { createShapeSlice, type ShapeSlice } from "./shapeSlice";
 import { createTableSlice, type TableSlice } from "./tableSlice";
@@ -42,6 +43,12 @@ export interface DiagramState extends SelectionSlice, TableSlice, RelationshipSl
 
 const touch = (diagram: Diagram): Diagram => ({ ...diagram, updatedAt: Date.now() });
 
+/** How a new diagram reaches the store: a selection whose item has gone clears with it. */
+const showDiagram = (state: DiagramState, diagram: Diagram) => ({
+  diagram,
+  selection: selectionIn(diagram, state.selection),
+});
+
 export const useDiagram = create<DiagramState>((set, get, store) => ({
   ...createSelectionSlice(set, get, store),
   ...createTableSlice(set, get, store),
@@ -60,7 +67,7 @@ export const useDiagram = create<DiagramState>((set, get, store) => ({
     if (next === diagram) return;
     const commit = options?.commit ?? true;
     set({
-      diagram: next,
+      ...showDiagram(get(), next),
       past: commit ? [...past, diagram].slice(-HISTORY_LIMIT) : past,
       future: commit ? [] : get().future,
       dirty: true,
@@ -87,14 +94,19 @@ export const useDiagram = create<DiagramState>((set, get, store) => ({
     const { past, diagram, future } = get();
     const previous = past[past.length - 1];
     if (!previous) return;
-    set({ diagram: previous, past: past.slice(0, -1), future: [diagram, ...future], dirty: true });
+    set({
+      ...showDiagram(get(), previous),
+      past: past.slice(0, -1),
+      future: [diagram, ...future],
+      dirty: true,
+    });
   },
 
   redo: () => {
     const { past, diagram, future } = get();
     const [next, ...rest] = future;
     if (!next) return;
-    set({ diagram: next, past: [...past, diagram], future: rest, dirty: true });
+    set({ ...showDiagram(get(), next), past: [...past, diagram], future: rest, dirty: true });
   },
 
   markSaved: () => set({ dirty: false }),
