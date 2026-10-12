@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { ChevronRight, Plus, Search, Table2 } from "lucide-react";
-import { ColumnKeyIcon } from "@/components/ColumnKeyIcon";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 import { tableCenter } from "@/lib/layout";
 import { useDiagram } from "@/store/useDiagram";
+import { TableColumns } from "./explorer/TableColumns";
+import { TableRow } from "./explorer/TableRow";
 
 export function Explorer() {
   const tables = useDiagram((s) => s.diagram.tables);
@@ -75,61 +75,21 @@ export function Explorer() {
             </p>
           )}
           {filtered.map((table) => {
-            const isOpen = expanded[table.id];
             const degree = relationships.filter(
               (r) => r.sourceTableId === table.id || r.targetTableId === table.id,
             ).length;
             return (
               <div key={table.id}>
-                <div
-                  className={cn(
-                    "group flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-xs transition-colors",
-                    selection.kind === "table" && selection.id === table.id
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent/60",
-                  )}
-                  onClick={() => focus(table.id)}
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpanded((prev) => ({ ...prev, [table.id]: !prev[table.id] }));
-                    }}
-                    className="flex size-4 shrink-0 items-center justify-center rounded hover:bg-background/60"
-                  >
-                    <ChevronRight
-                      className={cn("size-3 transition-transform", isOpen && "rotate-90")}
-                    />
-                  </button>
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ background: table.accent }}
-                  />
-                  <Table2 className="size-3 shrink-0 text-muted-foreground" />
-                  <span className="truncate font-medium">{table.name}</span>
-                  <span className="ml-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                    {degree ? `${degree}↔` : ""}
-                  </span>
-                </div>
-                {isOpen && (
-                  <div className="ml-6 border-l border-border/60 pl-2">
-                    {table.columns.map((column) => (
-                      <div key={column.id} className="flex items-center gap-1.5 py-0.5 text-[11px]">
-                        <ColumnKeyIcon
-                          pk={column.pk}
-                          fk={column.fk}
-                          className="size-2.5"
-                          placeholder={<span className="size-2.5 shrink-0" />}
-                        />
-                        <span className="truncate">{column.name}</span>
-                        <span className="ml-auto shrink-0 font-mono text-[9px] text-muted-foreground">
-                          {column.type}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <TableRow
+                  name={table.name}
+                  accent={table.accent}
+                  degree={degree}
+                  selected={selection.kind === "table" && selection.id === table.id}
+                  open={Boolean(expanded[table.id])}
+                  onFocus={() => focus(table.id)}
+                  onToggle={() => setExpanded((prev) => ({ ...prev, [table.id]: !prev[table.id] }))}
+                />
+                {expanded[table.id] && <TableColumns columns={table.columns} />}
               </div>
             );
           })}
