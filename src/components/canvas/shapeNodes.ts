@@ -20,6 +20,7 @@ const SHAPE_Z_INDEX = -2000;
 export const isShapeNode = (node: Node): node is ShapeNode =>
   node.type !== undefined && isShapeKind(node.type);
 
+/** Like `tableNodes`, each shape carries its declared size as `measured`. */
 export const shapeNodes = (shapes: Shape[], selection: Selection): ShapeNode[] =>
   shapes.map((shape) => ({
     id: shape.id,
@@ -27,6 +28,7 @@ export const shapeNodes = (shapes: Shape[], selection: Selection): ShapeNode[] =
     position: shape.position,
     width: shape.size.width,
     height: shape.size.height,
+    measured: shape.size,
     zIndex: SHAPE_Z_INDEX,
     selected: selection.kind === "shape" && selection.id === shape.id,
     data: { shape },

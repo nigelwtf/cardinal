@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -21,7 +21,6 @@ import { CanvasTools } from "./CanvasTools";
 import { isCanvasSurface, minimapColor, nodeKind, nodeMove } from "./canvasNodes";
 import { CrowFootMarkers } from "./CrowFootMarkers";
 import { isFarZoom } from "./farZoom";
-import { measure, withMeasurements, type NodeMeasurements } from "./nodeMeasurements";
 import { nodeTypes } from "./nodeTypes";
 import { RelationshipEdge } from "./RelationshipEdge";
 import { relationshipEdges } from "./relationshipEdges";
@@ -76,31 +75,13 @@ export function Canvas() {
     [selectedRelationship],
   );
 
-  const [measurements, setMeasurements] = useState<NodeMeasurements>(() => new Map());
-
   // Shapes come first so they paint underneath; their negative z-index keeps them there.
   const builtNodes: Node[] = useMemo(
-    () =>
-      withMeasurements(
-        [
-          ...shapeNodes(diagram.shapes, selection),
-          ...tableNodes({
-            tables: diagram.tables,
-            selection,
-            highlightedColumns,
-            expandedEnumColumns,
-          }),
-        ],
-        measurements,
-      ),
-    [
-      diagram.shapes,
-      diagram.tables,
-      expandedEnumColumns,
-      highlightedColumns,
-      measurements,
-      selection,
+    () => [
+      ...shapeNodes(diagram.shapes, selection),
+      ...tableNodes({ tables: diagram.tables, selection, highlightedColumns, expandedEnumColumns }),
     ],
+    [diagram.shapes, diagram.tables, expandedEnumColumns, highlightedColumns, selection],
   );
 
   const nodes = useReusedItems(builtNodes);
@@ -110,7 +91,6 @@ export function Canvas() {
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setMeasurements((current) => measure(current, changes, (id) => getNode(id) !== undefined));
       const kindOf = (id: string) => {
         const node = getNode(id);
         return node ? nodeKind(node) : "table";

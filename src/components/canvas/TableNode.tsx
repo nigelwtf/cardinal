@@ -25,8 +25,8 @@ function TableNodeInner({ id, data, selected }: NodeProps & { data: TableNodeDat
   const updateNodeInternals = useUpdateNodeInternals();
   const rowLayout = rowLayoutKey(table, expandedEnumColumns);
 
-  // The canvas hands React Flow its measured sizes, so it only re-reads handle positions when a
-  // node resizes. Rows can move without a resize, so ask for the re-read when they do. On mount
+  // Nodes carry their declared size, so React Flow only re-reads handle positions when that size
+  // changes. Rows can move without a resize, so ask for the re-read when they do. On mount
   // only with an open enum, whose rows may have wrapped while it was off screen: every table
   // re-reading on mount queries the whole DOM hundreds of times.
   const measuredLayout = useRef(hasOpenEnum(table, expandedEnumColumns) ? undefined : rowLayout);

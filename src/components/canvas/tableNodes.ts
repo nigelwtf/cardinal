@@ -8,7 +8,9 @@ import type { TableNodeData } from "./TableNode";
 
 /**
  * React Flow nodes for the tables. An open enum wraps onto lines `tableHandles` can't predict, so
- * such a table keeps the handle positions React Flow last read from it instead.
+ * such a table keeps the handle positions React Flow last read from it instead. Each node carries
+ * its declared size as `measured`: React Flow re-measures a node rebuilt without one, and `fitView`
+ * skips unmeasured nodes, which off-screen ones stay while they're unmounted.
  */
 export const tableNodes = ({
   tables,
@@ -23,6 +25,8 @@ export const tableNodes = ({
 }): Node<TableNodeData>[] =>
   tables.map((table) => {
     const wraps = hasOpenEnum(table, expandedEnumColumns);
+    const width = tableWidth(table);
+    const height = tableHeight(table);
     return {
       id: table.id,
       type: "table",
@@ -30,7 +34,8 @@ export const tableNodes = ({
       selected: selection.kind === "table" && selection.id === table.id,
       ...(!wraps && { handles: tableHandles(table) }),
       data: { table, highlightedColumns, dimmed: false },
-      width: tableWidth(table),
-      height: tableHeight(table),
+      width,
+      height,
+      measured: { width, height },
     };
   });
