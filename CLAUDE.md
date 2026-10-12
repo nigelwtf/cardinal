@@ -47,7 +47,8 @@ is promoted into the Zustand store only when something distant has to drive it. 
 earns its place precisely because `CommandPalette` calls `setAllEnumsExpanded` while `TableNode`
 renders it; don't cite it as licence to put every flag in the store.
 
-Inside `src/store/useDiagram.ts` (the single store), three groups:
+Inside the single store, `src/store/useDiagram.ts` and the slices beside it (`tableSlice`,
+`relationshipSlice`, `shapeSlice`, `selectionSlice`), three groups:
 
 - **Diagram data** (`tables`, `relationships`, `name` — anything that round-trips through
   Mermaid/SQL/JSON) goes through `apply(fn, options)`. `apply` is what stamps `updatedAt`, pushes
