@@ -26,6 +26,7 @@ import { relationshipEdges } from "./relationshipEdges";
 import { shapeNodes } from "./shapeNodes";
 import { columnFromHandle, sideFromHandle } from "./handles";
 import { tableNodes } from "./tableNodes";
+import { useReusedItems } from "./useReusedItems";
 
 const edgeTypes = { relationship: RelationshipEdge };
 
@@ -74,7 +75,7 @@ export function Canvas() {
   const [measurements, setMeasurements] = useState<NodeMeasurements>(() => new Map());
 
   // Shapes come first so they paint underneath; their negative z-index keeps them there.
-  const nodes: Node[] = useMemo(
+  const builtNodes: Node[] = useMemo(
     () =>
       withMeasurements(
         [
@@ -86,7 +87,10 @@ export function Canvas() {
     [diagram.shapes, diagram.tables, highlightedColumns, measurements, selection],
   );
 
-  const edges = useMemo(() => relationshipEdges(diagram, selection), [diagram, selection]);
+  const nodes = useReusedItems(builtNodes);
+  const edges = useReusedItems(
+    useMemo(() => relationshipEdges(diagram, selection), [diagram, selection]),
+  );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
