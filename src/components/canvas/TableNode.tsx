@@ -40,7 +40,7 @@ function TableNodeInner({ id, data, selected }: NodeProps & { data: TableNodeDat
       className={cn(
         // Width must not animate: React Flow measures handle positions once per size change.
         "group/table rounded-xl border bg-card text-card-foreground shadow-sm transition-[box-shadow,opacity,border-color]",
-        "hover:shadow-md [&_.react-flow\\_\\_handle]:hover:opacity-100",
+        "hover:shadow-md",
         selected ? "border-primary ring-2 ring-primary/30" : "",
         dimmed && "opacity-35",
       )}

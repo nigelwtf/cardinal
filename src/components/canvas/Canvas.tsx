@@ -11,6 +11,7 @@ import {
   type OnConnect,
   type OnReconnect,
   useReactFlow,
+  useStore,
   useViewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -19,6 +20,7 @@ import { DEFAULT_TABLE_SIZE, TABLE_WIDTHS } from "@/lib/layout";
 import { CanvasTools } from "./CanvasTools";
 import { isCanvasSurface, minimapColor, nodeKind, nodeMove } from "./canvasNodes";
 import { CrowFootMarkers } from "./CrowFootMarkers";
+import { isFarZoom } from "./farZoom";
 import { measure, withMeasurements, type NodeMeasurements } from "./nodeMeasurements";
 import { nodeTypes } from "./nodeTypes";
 import { RelationshipEdge } from "./RelationshipEdge";
@@ -55,6 +57,7 @@ export function Canvas() {
   const endGesture = useDiagram((s) => s.endGesture);
   const updateColumn = useDiagram((s) => s.updateColumn);
   const { screenToFlowPosition, getNode } = useReactFlow();
+  const far = useStore(isFarZoom);
 
   const selectedRelationship = useMemo(
     () =>
@@ -159,7 +162,7 @@ export function Canvas() {
   );
 
   return (
-    <div className="relative size-full">
+    <div className="group/canvas relative size-full" data-far={far || undefined}>
       <CrowFootMarkers />
       <ReactFlow
         nodes={nodes}
