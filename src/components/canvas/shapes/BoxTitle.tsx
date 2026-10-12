@@ -1,3 +1,4 @@
+import { Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TITLE_CLEARANCE } from "./boxStyle";
 import { InlineTitleInput } from "../InlineTitleInput";
@@ -7,6 +8,7 @@ export function BoxTitle({
   title,
   color,
   selected,
+  pinned,
   editing,
   onStartEdit,
   onCommit,
@@ -15,6 +17,7 @@ export function BoxTitle({
   title: string;
   color: string;
   selected: boolean;
+  pinned: boolean;
   editing: boolean;
   onStartEdit: () => void;
   onCommit: (title: string) => void;
@@ -35,15 +38,18 @@ export function BoxTitle({
           className={cn(text, "text-center")}
         />
       ) : (
-        <span
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            onStartEdit();
-          }}
-          className={cn(text, "max-w-full cursor-text truncate px-1.5")}
-        >
-          {title || (selected ? <span className="opacity-50">Add title</span> : null)}
-        </span>
+        <>
+          {pinned && <Pin aria-label="Pinned" className="mt-[5px] size-3.5 shrink-0" />}
+          <span
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onStartEdit();
+            }}
+            className={cn(text, "max-w-full cursor-text truncate px-1.5")}
+          >
+            {title || (selected ? <span className="opacity-50">Add title</span> : null)}
+          </span>
+        </>
       )}
     </div>
   );
