@@ -1,10 +1,12 @@
-import { memo, useState } from "react";
-import type { NodeProps } from "@xyflow/react";
+import { memo, useEffect, useRef, useState } from "react";
+import { useUpdateNodeInternals, type NodeProps } from "@xyflow/react";
 import { ROW_HEIGHT, tableWidth } from "@/lib/layout";
 import type { Table } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useDiagram } from "@/store/useDiagram";
 import { ColumnRow } from "./table/ColumnRow";
+import { hasOpenEnum } from "./table/hasOpenEnum";
+import { rowLayoutKey } from "./table/rowLayoutKey";
 import { TableHeader } from "./table/TableHeader";
 
 export interface TableNodeData extends Record<string, unknown> {
@@ -13,13 +15,26 @@ export interface TableNodeData extends Record<string, unknown> {
   dimmed: boolean;
 }
 
-function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData }) {
+function TableNodeInner({ id, data, selected }: NodeProps & { data: TableNodeData }) {
   const { table, highlightedColumns, dimmed } = data;
   const highlighted = new Set(highlightedColumns);
   const expandedEnumColumns = useDiagram((s) => s.expandedEnumColumns);
   const toggleEnumExpanded = useDiagram((s) => s.toggleEnumExpanded);
   const updateTable = useDiagram((s) => s.updateTable);
   const [renaming, setRenaming] = useState(false);
+  const updateNodeInternals = useUpdateNodeInternals();
+  const rowLayout = rowLayoutKey(table, expandedEnumColumns);
+
+  // Nodes carry their declared size, so React Flow only re-reads handle positions when that size
+  // changes. Rows can move without a resize, so ask for the re-read when they do. On mount
+  // only with an open enum, whose rows may have wrapped while it was off screen: every table
+  // re-reading on mount queries the whole DOM hundreds of times.
+  const measuredLayout = useRef(hasOpenEnum(table, expandedEnumColumns) ? undefined : rowLayout);
+  useEffect(() => {
+    if (measuredLayout.current === rowLayout) return;
+    measuredLayout.current = rowLayout;
+    updateNodeInternals(id);
+  }, [rowLayout, id, updateNodeInternals]);
 
   return (
     <div
@@ -27,7 +42,7 @@ function TableNodeInner({ data, selected }: NodeProps & { data: TableNodeData })
       className={cn(
         // Width must not animate: React Flow measures handle positions once per size change.
         "group/table rounded-xl border bg-card text-card-foreground shadow-sm transition-[box-shadow,opacity,border-color]",
-        "hover:shadow-md [&_.react-flow\\_\\_handle]:hover:opacity-100",
+        "hover:shadow-md",
         selected ? "border-primary ring-2 ring-primary/30" : "",
         dimmed && "opacity-35",
       )}

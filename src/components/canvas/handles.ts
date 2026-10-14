@@ -8,6 +8,9 @@ export const TABLE_HANDLE = "__table";
 export const COLUMN_SIDES: AnchorSide[] = ["left", "right"];
 export const TABLE_SIDES: AnchorSide[] = ["left", "right", "top", "bottom"];
 
+/** The side of a handle's square, in pixels. */
+export const HANDLE_SIZE = 8;
+
 export const HANDLE_POSITION: Record<AnchorSide, Position> = {
   left: Position.Left,
   right: Position.Right,

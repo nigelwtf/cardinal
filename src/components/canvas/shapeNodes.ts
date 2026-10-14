@@ -20,6 +20,11 @@ const SHAPE_Z_INDEX = -2000;
 export const isShapeNode = (node: Node): node is ShapeNode =>
   node.type !== undefined && isShapeKind(node.type);
 
+/**
+ * React Flow nodes for the shapes. Like `tableNodes`, each carries its declared size as `measured`.
+ * A pinned one stays selectable so it can be unpinned, and a drag on it pans the canvas because
+ * React Flow only blocks panning on draggable nodes.
+ */
 export const shapeNodes = (shapes: Shape[], selection: Selection): ShapeNode[] =>
   shapes.map((shape) => ({
     id: shape.id,
@@ -27,7 +32,9 @@ export const shapeNodes = (shapes: Shape[], selection: Selection): ShapeNode[] =
     position: shape.position,
     width: shape.size.width,
     height: shape.size.height,
+    measured: shape.size,
     zIndex: SHAPE_Z_INDEX,
     selected: selection.kind === "shape" && selection.id === shape.id,
+    ...(shape.pinned && { draggable: false, deletable: false }),
     data: { shape },
   }));

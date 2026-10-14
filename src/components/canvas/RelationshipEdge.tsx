@@ -1,7 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
+import { getSmoothStepPath, type EdgeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import type { Cardinality, Point } from "@/lib/types";
+import { EdgeLabelPortal } from "./EdgeLabelPortal";
 import { STUB, midpoint, segmentAnchors, waypointPath } from "./edgePath";
 import { RelationshipPath } from "./relationship/RelationshipPath";
 import { useWaypointDrag } from "./relationship/useWaypointDrag";
@@ -81,14 +82,14 @@ function RelationshipEdgeInner({
         onLeave={onLeave}
       />
 
-      <EdgeLabelRenderer>
+      <EdgeLabelPortal>
         {label && (
           <div
             style={{
               transform: `translate(-50%, -50%) translate(${labelAnchor.x}px, ${labelAnchor.y - (active ? 16 : 0)}px)`,
             }}
             className={cn(
-              "pointer-events-none absolute rounded-full border bg-background/90 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm transition-transform",
+              "pointer-events-none absolute rounded-full border bg-background px-2 py-0.5 text-[10px] font-medium transition-transform group-data-far/canvas:hidden",
               selected ? "border-primary text-primary" : "border-border text-muted-foreground",
               data?.dimmed && "opacity-20",
             )}
@@ -110,7 +111,7 @@ function RelationshipEdgeInner({
             onRemove={removeWaypoint}
           />
         )}
-      </EdgeLabelRenderer>
+      </EdgeLabelPortal>
     </>
   );
 }
