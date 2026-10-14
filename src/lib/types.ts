@@ -72,6 +72,8 @@ export interface BoxShape {
   size: Size;
   title: string;
   color: string;
+  /** Pinned in place: it can't be dragged, resized or deleted until unpinned. Absent means not. */
+  pinned?: boolean;
 }
 
 /** Drawable canvas decoration. Never exported to Mermaid or SQL, which have no way to say it. */

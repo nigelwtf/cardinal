@@ -1,20 +1,25 @@
-import { PenLine, Trash2 } from "lucide-react";
+import { PenLine, Pin, Trash2 } from "lucide-react";
 import { SwatchPicker } from "@/components/SwatchPicker";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SHAPE_COLORS } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
-/** Floating controls for a selected box: colour presets, rename and delete. */
+/** Floating controls for a selected box: colour presets, rename, pin and delete. */
 export function BoxToolbar({
   color,
+  pinned,
   onColorChange,
   onRename,
+  onPinnedChange,
   onDelete,
 }: {
   color: string;
+  pinned: boolean;
   onColorChange: (color: string) => void;
   onRename: () => void;
+  onPinnedChange: (pinned: boolean) => void;
   onDelete: () => void;
 }) {
   return (
@@ -39,14 +44,38 @@ export function BoxToolbar({
           <Button
             size="icon-sm"
             variant="ghost"
-            aria-label="Delete section"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={onDelete}
+            aria-label="Pin section"
+            aria-pressed={pinned}
+            onClick={() => onPinnedChange(!pinned)}
+            className={cn(
+              pinned &&
+                "bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary dark:hover:bg-primary/20",
+            )}
           >
-            <Trash2 />
+            <Pin />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Delete ⌫</TooltipContent>
+        <TooltipContent>
+          {pinned ? "Unpin · lets the section move again" : "Pin · dragging it pans instead"}
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        {/* A disabled button swallows hover, so the span carries the tooltip. */}
+        <TooltipTrigger asChild>
+          <span>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Delete section"
+              disabled={pinned}
+              className="text-muted-foreground hover:text-destructive"
+              onClick={onDelete}
+            >
+              <Trash2 />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{pinned ? "Unpin to delete" : "Delete ⌫"}</TooltipContent>
       </Tooltip>
     </div>
   );

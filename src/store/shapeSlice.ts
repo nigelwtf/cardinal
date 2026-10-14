@@ -20,7 +20,7 @@ export interface ShapeSlice {
   /** Moves a shape and whatever sits fully inside it, measured from the gesture's start. */
   moveShape: (id: string, position: Point, commit?: boolean) => void;
   resizeShape: (id: string, rect: Rect, commit?: boolean) => void;
-  updateBox: (id: string, patch: Partial<Pick<BoxShape, "title" | "color">>) => void;
+  updateBox: (id: string, patch: Partial<Pick<BoxShape, "title" | "color" | "pinned">>) => void;
   removeShape: (id: string) => void;
 }
 

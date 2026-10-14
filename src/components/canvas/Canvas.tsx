@@ -10,11 +10,13 @@ import {
   type NodeChange,
   type OnConnect,
   type OnReconnect,
+  useKeyPress,
   useReactFlow,
   useStore,
   useViewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { cn } from "@/lib/utils";
 import { useDiagram } from "@/store/useDiagram";
 import { DEFAULT_TABLE_SIZE, TABLE_WIDTHS } from "@/lib/layout";
 import { CanvasTools } from "./CanvasTools";
@@ -28,6 +30,7 @@ import { shapeNodes } from "./shapeNodes";
 import { columnFromHandle, sideFromHandle } from "./handles";
 import { tableNodes } from "./tableNodes";
 import { useReusedItems } from "./useReusedItems";
+import { useRightDragPan } from "./useRightDragPan";
 
 const edgeTypes = { relationship: RelationshipEdge };
 
@@ -58,6 +61,9 @@ export function Canvas() {
   const updateColumn = useDiagram((s) => s.updateColumn);
   const { screenToFlowPosition, getNode } = useReactFlow();
   const far = useStore(isFarZoom);
+  // React Flow only lets Space pan over nodes that aren't draggable, so holding it frees them all.
+  const spacePanning = useKeyPress("Space");
+  const rightDragPan = useRightDragPan();
 
   const selectedRelationship = useMemo(
     () =>
@@ -155,7 +161,16 @@ export function Canvas() {
   );
 
   return (
-    <div className="group/canvas relative size-full" data-far={far || undefined}>
+    <div
+      {...rightDragPan.handlers}
+      className={cn(
+        "group/canvas relative size-full",
+        // Nodes set their own cursors, so the whole subtree is overridden while either pan lasts.
+        spacePanning && "!cursor-grab [&_*]:!cursor-grab",
+        rightDragPan.panning && "!cursor-grabbing [&_*]:!cursor-grabbing",
+      )}
+      data-far={far || undefined}
+    >
       <CrowFootMarkers />
       <ReactFlow
         nodes={nodes}
@@ -189,6 +204,10 @@ export function Canvas() {
           );
         }}
         zoomOnDoubleClick={false}
+        // Excalidraw-style: the wheel pans (Shift for sideways), Ctrl/⌘ + wheel and pinch zoom.
+        panOnScroll
+        panOnScrollSpeed={1}
+        nodesDraggable={!spacePanning}
         // Tables carry their handle positions (see `tableHandles`), so edges reach off-screen ones.
         onlyRenderVisibleElements
         fitView
