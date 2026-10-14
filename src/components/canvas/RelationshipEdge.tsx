@@ -7,11 +7,12 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
+import { getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import type { Cardinality, Point } from "@/lib/types";
 import { useDiagram } from "@/store/useDiagram";
 import { markerUrl } from "./CrowFootMarkers";
+import { EdgeLabelPortal } from "./EdgeLabelPortal";
 import { STUB, midpoint, segmentAnchors, waypointPath } from "./edgePath";
 
 export interface RelationshipEdgeData extends Record<string, unknown> {
@@ -192,14 +193,14 @@ function RelationshipEdgeInner({
         />
       </g>
 
-      <EdgeLabelRenderer>
+      <EdgeLabelPortal>
         {label && (
           <div
             style={{
               transform: `translate(-50%, -50%) translate(${labelAnchor.x}px, ${labelAnchor.y - (active ? 16 : 0)}px)`,
             }}
             className={cn(
-              "pointer-events-none absolute rounded-full border bg-background/90 px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm transition-transform",
+              "pointer-events-none absolute rounded-full border bg-background px-2 py-0.5 text-[10px] font-medium transition-transform group-data-far/canvas:hidden",
               selected ? "border-primary text-primary" : "border-border text-muted-foreground",
               data?.dimmed && "opacity-20",
             )}
@@ -265,7 +266,7 @@ function RelationshipEdgeInner({
             })}
           </>
         )}
-      </EdgeLabelRenderer>
+      </EdgeLabelPortal>
     </>
   );
 }

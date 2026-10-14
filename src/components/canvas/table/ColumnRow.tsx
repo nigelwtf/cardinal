@@ -6,6 +6,14 @@ import { cn } from "@/lib/utils";
 import { ColumnHandles } from "./ColumnHandles";
 import { EnumTypeBadge } from "./EnumTypeBadge";
 
+/** Zoomed far out (see `farZoom.ts`), the row hides its text and shows a bar in its place. */
+const farBar = cn(
+  "group-data-far/canvas:invisible",
+  "group-data-far/canvas:before:visible group-data-far/canvas:before:absolute",
+  "group-data-far/canvas:before:inset-x-3 group-data-far/canvas:before:inset-y-2.5",
+  "group-data-far/canvas:before:rounded-full group-data-far/canvas:before:bg-muted-foreground/20",
+);
+
 /** One column of a table node: key icon, name, nullability and type, with its connection handles. */
 export function ColumnRow({
   column,
@@ -25,6 +33,7 @@ export function ColumnRow({
     <div
       className={cn(
         "relative flex gap-2 px-3 text-xs",
+        farBar,
         expanded ? "items-start py-1" : "items-center",
         highlighted && "bg-primary/10",
       )}

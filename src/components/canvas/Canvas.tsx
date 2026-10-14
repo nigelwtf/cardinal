@@ -12,6 +12,7 @@ import {
   type OnReconnect,
   useKeyPress,
   useReactFlow,
+  useStore,
   useViewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -21,12 +22,14 @@ import { DEFAULT_TABLE_SIZE, TABLE_WIDTHS } from "@/lib/layout";
 import { CanvasTools } from "./CanvasTools";
 import { isCanvasSurface, minimapColor, nodeKind, nodeMove } from "./canvasNodes";
 import { CrowFootMarkers } from "./CrowFootMarkers";
+import { isFarZoom } from "./farZoom";
 import { nodeTypes } from "./nodeTypes";
 import { RelationshipEdge } from "./RelationshipEdge";
 import { relationshipEdges } from "./relationshipEdges";
 import { shapeNodes } from "./shapeNodes";
 import { columnFromHandle, sideFromHandle } from "./handles";
 import { tableNodes } from "./tableNodes";
+import { useReusedItems } from "./useReusedItems";
 import { useRightDragPan } from "./useRightDragPan";
 
 const edgeTypes = { relationship: RelationshipEdge };
@@ -43,6 +46,7 @@ function ZoomBadge() {
 export function Canvas() {
   const diagram = useDiagram((s) => s.diagram);
   const selection = useDiagram((s) => s.selection);
+  const expandedEnumColumns = useDiagram((s) => s.expandedEnumColumns);
   const select = useDiagram((s) => s.select);
   const moveTable = useDiagram((s) => s.moveTable);
   const addRelationship = useDiagram((s) => s.addRelationship);
@@ -56,6 +60,7 @@ export function Canvas() {
   const endGesture = useDiagram((s) => s.endGesture);
   const updateColumn = useDiagram((s) => s.updateColumn);
   const { screenToFlowPosition, getNode } = useReactFlow();
+  const far = useStore(isFarZoom);
   // React Flow only lets Space pan over nodes that aren't draggable, so holding it frees them all.
   const spacePanning = useKeyPress("Space");
   const rightDragPan = useRightDragPan();
@@ -77,15 +82,18 @@ export function Canvas() {
   );
 
   // Shapes come first so they paint underneath; their negative z-index keeps them there.
-  const nodes: Node[] = useMemo(
+  const builtNodes: Node[] = useMemo(
     () => [
       ...shapeNodes(diagram.shapes, selection),
-      ...tableNodes(diagram.tables, selection, highlightedColumns),
+      ...tableNodes({ tables: diagram.tables, selection, highlightedColumns, expandedEnumColumns }),
     ],
-    [diagram.shapes, diagram.tables, highlightedColumns, selection],
+    [diagram.shapes, diagram.tables, expandedEnumColumns, highlightedColumns, selection],
   );
 
-  const edges = useMemo(() => relationshipEdges(diagram, selection), [diagram, selection]);
+  const nodes = useReusedItems(builtNodes);
+  const edges = useReusedItems(
+    useMemo(() => relationshipEdges(diagram, selection), [diagram, selection]),
+  );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -156,11 +164,12 @@ export function Canvas() {
     <div
       {...rightDragPan.handlers}
       className={cn(
-        "relative size-full",
+        "group/canvas relative size-full",
         // Nodes set their own cursors, so the whole subtree is overridden while either pan lasts.
         spacePanning && "!cursor-grab [&_*]:!cursor-grab",
         rightDragPan.panning && "!cursor-grabbing [&_*]:!cursor-grabbing",
       )}
+      data-far={far || undefined}
     >
       <CrowFootMarkers />
       <ReactFlow
@@ -199,6 +208,8 @@ export function Canvas() {
         panOnScroll
         panOnScrollSpeed={1}
         nodesDraggable={!spacePanning}
+        // Tables carry their handle positions (see `tableHandles`), so edges reach off-screen ones.
+        onlyRenderVisibleElements
         fitView
         fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
         minZoom={0.15}
