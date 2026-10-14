@@ -10,10 +10,12 @@ import {
   type NodeChange,
   type OnConnect,
   type OnReconnect,
+  useKeyPress,
   useReactFlow,
   useViewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { cn } from "@/lib/utils";
 import { useDiagram } from "@/store/useDiagram";
 import { DEFAULT_TABLE_SIZE, TABLE_WIDTHS } from "@/lib/layout";
 import { CanvasTools } from "./CanvasTools";
@@ -25,6 +27,7 @@ import { relationshipEdges } from "./relationshipEdges";
 import { shapeNodes } from "./shapeNodes";
 import { columnFromHandle, sideFromHandle } from "./handles";
 import { tableNodes } from "./tableNodes";
+import { useRightDragPan } from "./useRightDragPan";
 
 const edgeTypes = { relationship: RelationshipEdge };
 
@@ -53,6 +56,9 @@ export function Canvas() {
   const endGesture = useDiagram((s) => s.endGesture);
   const updateColumn = useDiagram((s) => s.updateColumn);
   const { screenToFlowPosition, getNode } = useReactFlow();
+  // React Flow only lets Space pan over nodes that aren't draggable, so holding it frees them all.
+  const spacePanning = useKeyPress("Space");
+  const rightDragPan = useRightDragPan();
 
   const selectedRelationship = useMemo(
     () =>
@@ -147,7 +153,15 @@ export function Canvas() {
   );
 
   return (
-    <div className="relative size-full">
+    <div
+      {...rightDragPan.handlers}
+      className={cn(
+        "relative size-full",
+        // Nodes set their own cursors, so the whole subtree is overridden while either pan lasts.
+        spacePanning && "!cursor-grab [&_*]:!cursor-grab",
+        rightDragPan.panning && "!cursor-grabbing [&_*]:!cursor-grabbing",
+      )}
+    >
       <CrowFootMarkers />
       <ReactFlow
         nodes={nodes}
@@ -181,6 +195,10 @@ export function Canvas() {
           );
         }}
         zoomOnDoubleClick={false}
+        // Excalidraw-style: the wheel pans (Shift for sideways), Ctrl/⌘ + wheel and pinch zoom.
+        panOnScroll
+        panOnScrollSpeed={1}
+        nodesDraggable={!spacePanning}
         fitView
         fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
         minZoom={0.15}

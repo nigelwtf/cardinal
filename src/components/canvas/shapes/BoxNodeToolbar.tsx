@@ -5,7 +5,15 @@ import { BoxToolbar } from "./BoxToolbar";
 
 /** Keeps the box toolbar clear of the title at any zoom. Mounted only for the selected box, so
  *  only one node follows the zoom level. */
-export function BoxNodeToolbar({ id, color }: { id: string; color: string }) {
+export function BoxNodeToolbar({
+  id,
+  color,
+  pinned,
+}: {
+  id: string;
+  color: string;
+  pinned: boolean;
+}) {
   const updateBox = useDiagram((s) => s.updateBox);
   const removeShape = useDiagram((s) => s.removeShape);
   const setEditingShape = useDiagram((s) => s.setEditingShape);
@@ -17,8 +25,10 @@ export function BoxNodeToolbar({ id, color }: { id: string; color: string }) {
     <NodeToolbar isVisible position={Position.Top} offset={offset} style={{ zIndex: 10 }}>
       <BoxToolbar
         color={color}
+        pinned={pinned}
         onColorChange={(next) => updateBox(id, { color: next })}
         onRename={() => setEditingShape(id)}
+        onPinnedChange={(next) => updateBox(id, { pinned: next })}
         onDelete={() => removeShape(id)}
       />
     </NodeToolbar>
