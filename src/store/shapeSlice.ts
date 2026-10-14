@@ -1,4 +1,6 @@
 import type { StateCreator } from "zustand";
+import { mapById } from "@/lib/mapById";
+import { patched } from "@/lib/patched";
 import { moveWithContents } from "@/lib/shapes/moveWithContents";
 import type { Rect } from "@/lib/shapes/rect";
 import type { BoxShape, Diagram, Point, Shape, ShapeKind } from "@/lib/types";
@@ -24,10 +26,8 @@ export interface ShapeSlice {
   removeShape: (id: string) => void;
 }
 
-const mapShape = (diagram: Diagram, id: string, fn: (shape: Shape) => Shape): Diagram => ({
-  ...diagram,
-  shapes: diagram.shapes.map((shape) => (shape.id === id ? fn(shape) : shape)),
-});
+const mapShape = (diagram: Diagram, id: string, fn: (shape: Shape) => Shape): Diagram =>
+  patched(diagram, { shapes: mapById(diagram.shapes, id, fn) });
 
 export const createShapeSlice: StateCreator<DiagramState, [], [], ShapeSlice> = (set, get) => ({
   tool: "select",
@@ -51,12 +51,7 @@ export const createShapeSlice: StateCreator<DiagramState, [], [], ShapeSlice> = 
     ),
 
   updateBox: (id, patch) =>
-    get().apply((d) => mapShape(d, id, (s) => (s.kind === "box" ? { ...s, ...patch } : s))),
+    get().apply((d) => mapShape(d, id, (s) => (s.kind === "box" ? patched(s, patch) : s))),
 
-  removeShape: (id) => {
-    get().apply((d) => ({ ...d, shapes: d.shapes.filter((s) => s.id !== id) }));
-    const { selection, editingShapeId } = get();
-    if (selection.kind === "shape" && selection.id === id) set({ selection: { kind: "none" } });
-    if (editingShapeId === id) set({ editingShapeId: null });
-  },
+  removeShape: (id) => get().removeItems({ shapes: [id] }),
 });
