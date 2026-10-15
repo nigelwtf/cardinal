@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import { newId } from "@/lib/id";
+import { uniqueTableName } from "@/lib/tableName";
 import { mapById } from "@/lib/mapById";
 import { patched } from "@/lib/patched";
 import { ACCENTS, type Column, type Diagram, type Table } from "@/lib/types";
@@ -76,7 +77,7 @@ export const createTableSlice: StateCreator<DiagramState, [], [], TableSlice> = 
     const copy: Table = {
       ...source,
       id: newId("tbl"),
-      name: `${source.name}_copy`,
+      name: uniqueTableName(source.name, new Set(get().diagram.tables.map((t) => t.name))),
       position: { x: source.position.x + 48, y: source.position.y + 48 },
       columns: source.columns.map((c) => ({ ...c, id: newId("col") })),
     };

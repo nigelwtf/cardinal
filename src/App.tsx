@@ -29,6 +29,8 @@ function Workspace() {
   const redo = useDiagram((s) => s.redo);
   const select = useDiagram((s) => s.select);
   const setTool = useDiagram((s) => s.setTool);
+  const copySelection = useDiagram((s) => s.copySelection);
+  const pasteClip = useDiagram((s) => s.pasteClip);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -65,6 +67,17 @@ function Workspace() {
       { key: "k", mod: true, allowWhileTyping: true, run: () => setPaletteOpen((open) => !open) },
       { key: "z", mod: true, run: () => undo() },
       { key: "z", mod: true, shift: true, run: () => redo() },
+      {
+        key: "c",
+        mod: true,
+        preventDefault: false,
+        run: (event) => {
+          if (!window.getSelection()?.isCollapsed) return;
+          event.preventDefault();
+          copySelection();
+        },
+      },
+      { key: "v", mod: true, run: () => pasteClip() },
       { key: "n", run: () => addTable() },
       { key: "l", run: () => layout("LR") },
       ...TOOLS.map((tool): KeyBinding => ({ key: tool.key, run: () => setTool(tool.id) })),
@@ -82,7 +95,19 @@ function Workspace() {
       { key: "-", mod: true, run: () => zoomOut() },
       { key: "0", mod: true, run: () => zoomTo(1, { duration: 200 }) },
     ],
-    [addTable, layout, redo, select, setTool, undo, zoomIn, zoomOut, zoomTo],
+    [
+      addTable,
+      copySelection,
+      layout,
+      pasteClip,
+      redo,
+      select,
+      setTool,
+      undo,
+      zoomIn,
+      zoomOut,
+      zoomTo,
+    ],
   );
 
   useEffect(() => {

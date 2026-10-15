@@ -17,12 +17,13 @@ whiteboard product, and doesn't cost a seat licence. Local-first, keyboard-drive
 - **Connectors you can push around** — hover any relationship and its handles appear: a hollow dot on
   every segment that creates a bend when dragged, and a solid dot on every existing bend. Add as many
   as you like. Bends snap to an 8px grid and line up with their neighbours automatically (hold `⌥` to
-  go off-grid); double-click a dot to remove it, or *Straighten line* to clear them all. Routes stay
-  orthogonal with rounded corners no matter how many bends you add. Drag either *end* of a line onto a
+  go off-grid); double-click a dot to remove it, or _Straighten line_ to clear them all. Routes stay
+  orthogonal with rounded corners no matter how many bends you add. Drag either _end_ of a line onto a
   different column to re-point the relationship.
 
   Bends are stored as displacements from the path's natural midpoint, so they travel with the tables
   rather than being stranded when they move; a re-layout clears them.
+
 - **Mermaid as a first-class surface** — the `erDiagram` panel is editable. Type in it and the canvas
   updates; move things on the canvas and the source updates. Reconciliation keeps table ids, canvas
   positions, colours and the bits Mermaid can't express (nullability, defaults) intact.
@@ -37,6 +38,7 @@ whiteboard product, and doesn't cost a seat licence. Local-first, keyboard-drive
 - **Local-first storage** — every diagram lives in IndexedDB. No account, no server, no network calls.
 
 ## Caveats
+
 I built this for myself, to solve the real need I have to produce ER diagrams at work. You're free to use this, but note that this tool is completely unsupported.
 
 ## Run it
@@ -48,21 +50,22 @@ pnpm dev
 
 ## Shortcuts
 
-| Key | Action |
-| --- | --- |
-| `⌘K` | Command palette |
-| `N` | New table |
-| `L` | Auto layout |
-| `V` / `S` | Select tool / section tool |
-| `⌘Z` / `⇧⌘Z` | Undo / redo |
-| `Double-click canvas` | New table at the cursor |
-| `Backspace` | Delete selection |
-| `Drag a dot on a line` | Add or move a bend |
-| `Double-click a dot` | Remove that bend |
-| `⌥` while dragging | Bend off-grid |
-| `Drag a line end` | Re-point the relationship |
-| `Double-click a section title` | Rename the section |
-| `Double-click a table name` | Rename the table |
+| Key                            | Action                          |
+| ------------------------------ | ------------------------------- |
+| `⌘K`                           | Command palette                 |
+| `N`                            | New table                       |
+| `L`                            | Auto layout                     |
+| `V` / `S`                      | Select tool / section tool      |
+| `⌘Z` / `⇧⌘Z`                   | Undo / redo                     |
+| `⌘C` / `⌘V`                    | Copy / paste the selected table |
+| `Double-click canvas`          | New table at the cursor         |
+| `Backspace`                    | Delete selection                |
+| `Drag a dot on a line`         | Add or move a bend              |
+| `Double-click a dot`           | Remove that bend                |
+| `⌥` while dragging             | Bend off-grid                   |
+| `Drag a line end`              | Re-point the relationship       |
+| `Double-click a section title` | Rename the section              |
+| `Double-click a table name`    | Rename the table                |
 
 ## How it's put together
 
