@@ -5,6 +5,7 @@ import { emptyDiagram } from "@/lib/sample";
 import { patched } from "@/lib/patched";
 import { removeItems, type ItemIds } from "@/lib/removeItems";
 import type { Diagram } from "@/lib/types";
+import { createClipboardSlice, type ClipboardSlice } from "./clipboardSlice";
 import { createRelationshipSlice, type RelationshipSlice } from "./relationshipSlice";
 import { selectionIn } from "./selectionIn";
 import { createSelectionSlice, type SelectionSlice } from "./selectionSlice";
@@ -16,7 +17,8 @@ export { newColumn } from "./tableSlice";
 
 const HISTORY_LIMIT = 100;
 
-export interface DiagramState extends SelectionSlice, TableSlice, RelationshipSlice, ShapeSlice {
+export interface DiagramState
+  extends SelectionSlice, TableSlice, RelationshipSlice, ShapeSlice, ClipboardSlice {
   diagram: Diagram;
   past: Diagram[];
   future: Diagram[];
@@ -58,6 +60,7 @@ export const useDiagram = create<DiagramState>((set, get, store) => ({
   ...createTableSlice(set, get, store),
   ...createRelationshipSlice(set, get, store),
   ...createShapeSlice(set, get, store),
+  ...createClipboardSlice(set, get, store),
 
   diagram: emptyDiagram(),
   past: [],
